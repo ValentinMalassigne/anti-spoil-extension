@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anti-Spoil Extension</title>
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <h1>Anti-Spoil Extension</h1>
+      <p class="subtitle">Blur YouTube thumbnails and titles</p>
+    </div>
+    
+    <div class="status-section">
+      <span id="status-text" class="status-text">Checking status...</span>
+    </div>
+    
+    <div class="controls">
+      <button id="toggle-blur" class="btn">Toggle Blur</button>
+    </div>
+    
+    <div class="info">
+      <p class="help-text">
+        This extension blurs YouTube video thumbnails and titles to prevent spoilers.
+        Hover over blurred content to peek at it.
+      </p>
+    </div>
+  </div>
+  
+  <script src="dist/popup.js"></script>
+</body>
+</html>
