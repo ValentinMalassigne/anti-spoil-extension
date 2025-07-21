@@ -20,6 +20,30 @@
     <div class="controls">
       <button id="toggle-blur" class="btn">Toggle Blur</button>
     </div>
+
+    <div class="channel-section">
+      <h3 class="section-title">Channel List</h3>
+      <p class="section-subtitle">Videos from these channels won't be blurred</p>
+      
+      <div class="add-channel-form">
+        <input type="text" id="channel-input" placeholder="@channelname" maxlength="50">
+        <button id="add-channel-btn" class="btn btn-small">Add</button>
+      </div>
+      
+      <div class="channel-search-container">
+        <input type="text" id="channel-search" placeholder="Search channels..." class="search-input">
+      </div>
+      
+      <div class="channel-list-container">
+        <ul id="channel-list" class="channel-list">
+          <!-- Channels will be populated here -->
+        </ul>
+        <div id="no-channels" class="no-channels hidden">
+          <p>No channels added yet.</p>
+          <p class="help-text-small">Add channel names in @username format.</p>
+        </div>
+      </div>
+    </div>
     
     <div class="info">
       <p class="help-text">

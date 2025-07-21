@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Popup</title>
+    <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+    <!-- Main Control Section -->
+    <div class="header">
+        <h1>Anti-Spoil Extension</h1>
+    </div>
+    
+    <div class="main-controls">
+        <button id="toggle-blur" class="btn btn-success">Enable Blur</button>
+        <p class="status">Status: <span id="status-text" class="status-off">Blur is OFF</span></p>
+    </div>
+
+    <!-- Channel Management Section -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Channel Management</h2>
+        </div>
+        
+        <div class="channel-form">
+            <div class="input-group">
+                <input type="text" id="channel-input" placeholder="Enter channel name (e.g., @channelname)" maxlength="50">
+                <button id="add-channel-btn" class="btn btn-primary">Add</button>
+            </div>
+        </div>
+
+        <div class="channel-search">
+            <input type="text" id="channel-search" placeholder="Search channels..." class="search-input">
+        </div>
+
+        <div class="channel-list-container">
+            <ul id="channel-list" class="channel-list"></ul>
+            <div id="no-channels" class="no-channels" style="display: none;">No channels added yet</div>
+        </div>
+    </div>
+
+    <script>
+        // Mock Chrome APIs for testing
+        if (typeof chrome === 'undefined') {
+            window.chrome = {
+                tabs: {
+                    query: () => Promise.resolve([{ id: 1, url: 'https://youtube.com' }]),
+                    sendMessage: (tabId, message) => {
+                        console.log('Mock sendMessage:', message);
+                        return Promise.resolve({ 
+                            success: true, 
+                            enabled: false, 
+                            channels: ['@testchannel1', '@testchannel2', '@longchannelname3', '@anotherchannel4', '@channel5', '@channel6']
+                        });
+                    }
+                },
+                storage: {
+                    local: {
+                        get: () => Promise.resolve({ channelList: [] }),
+                        set: (data) => Promise.resolve(console.log('Mock storage set:', data))
+                    },
+                    sync: {
+                        set: (data) => Promise.resolve(console.log('Mock sync set:', data))
+                    }
+                }
+            };
+        }
+    </script>
+    <script src="dist/popup.js"></script>
+</body>
+</html>
