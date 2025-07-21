@@ -16,3 +16,12 @@
 .anti-spoil-title-blurred:hover {
   filter: blur(1px) !important;
 }
+
+.anti-spoil-duration-hidden {
+  transition: all 0.2s ease !important;
+  cursor: help !important;
+}
+
+.anti-spoil-duration-hidden:hover {
+  opacity: 0.8 !important;
+}
