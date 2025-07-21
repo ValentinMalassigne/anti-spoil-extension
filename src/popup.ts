@@ -239,7 +239,7 @@ class PopupController {
         // Add via content script
         const response = await chrome.tabs.sendMessage(activeTab.id, { 
           action: 'add-channel', 
-          channel: channelName 
+          channelName: channelName 
         }) as MessageResponse;
 
         if (response && response.success) {
@@ -273,7 +273,7 @@ class PopupController {
         // Remove via content script
         const response = await chrome.tabs.sendMessage(activeTab.id, { 
           action: 'remove-channel', 
-          channel: channelName 
+          channelName: channelName 
         }) as MessageResponse;
 
         if (response && response.success) {
