@@ -1,6 +1,6 @@
 # Channel List Management Test
 
-The extension now supports managing a list of channel names in the format "@name".
+The extension now supports managing a list of channel names that will have their videos blurred. Only videos from channels in this list will be blurred when the extension is enabled.
 
 ## Testing the Channel List Feature
 
@@ -104,9 +104,16 @@ chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
 ## Channel Name Validation
 - Must start with `@`
 - Must have at least one character after the `@`
-- Case-sensitive
+- Case-sensitive matching
 - Duplicates are automatically prevented
 - No limit on the number of channels (expandable list)
+
+## How It Works
+1. Add channel names to your list (e.g., @channelname)
+2. Enable blur via the toggle
+3. Only videos from channels in your list will be blurred
+4. Videos from channels not in your list remain unblurred
+5. Empty channel list means no videos will be blurred
 
 ## Storage
 Channel lists are stored persistently in:
@@ -114,9 +121,10 @@ Channel lists are stored persistently in:
 - `chrome.storage.local` (local backup)
 
 ## Example Use Cases
-1. Whitelist specific channels to never blur
-2. Blacklist channels to always blur
-3. Create custom filtering rules based on channel names
+1. **Spoiler Prevention**: Add channels that frequently post spoilers for shows/games you follow
+2. **Content Filtering**: Add channels with content you want to carefully choose when to view
+3. **Focused Browsing**: Only blur specific channels while leaving others visible
+4. **Temporary Filtering**: Quickly add/remove channels based on current interests
 4. Future feature: Channel-specific blur settings
 
 ## Settings Object Structure

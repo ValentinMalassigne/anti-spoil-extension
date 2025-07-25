@@ -1,7 +1,10 @@
 // Manages the blur functionality for YouTube elements
+import { ChannelDetector } from './channel-detector';
+
 export class BlurManager {
   private originalDurations: Map<Element, string> = new Map(); // Store original duration values
   private isBlurEnabled: boolean = true;
+  private channelList: string[] = [];
 
   constructor(isBlurEnabled: boolean = true) {
     this.isBlurEnabled = isBlurEnabled;
@@ -9,6 +12,14 @@ export class BlurManager {
 
   public setBlurEnabled(enabled: boolean): void {
     this.isBlurEnabled = enabled;
+  }
+
+  public setChannelList(channelList: string[]): void {
+    this.channelList = [...channelList];
+  }
+
+  public getChannelList(): string[] {
+    return [...this.channelList];
   }
 
   public applyBlur(): void {
@@ -47,6 +58,8 @@ export class BlurManager {
   }
 
   private blurThumbnails(): void {
+    if (!this.isBlurEnabled) return;
+
     // YouTube thumbnail selectors
     const thumbnailSelectors = [
       'ytd-thumbnail img', // Main thumbnails
@@ -64,6 +77,16 @@ export class BlurManager {
         // Check if this video has been watched (has progress bar)
         if (this.hasWatchProgress(img)) {
           return; // Skip blurring for watched videos
+        }
+
+        // Check if this video should be blurred based on channel list
+        if (!ChannelDetector.shouldBlurVideo(img, this.channelList)) {
+          // Remove blur if it was previously applied but shouldn't be anymore
+          if (img.classList.contains('anti-spoil-blurred')) {
+            img.style.filter = 'none';
+            img.classList.remove('anti-spoil-blurred');
+          }
+          return;
         }
         
         if (!img.classList.contains('anti-spoil-blurred')) {
@@ -89,6 +112,8 @@ export class BlurManager {
   }
 
   private blurTitles(): void {
+    if (!this.isBlurEnabled) return;
+
     // YouTube title selectors
     const titleSelectors = [
       '#video-title', // Video titles
@@ -106,6 +131,16 @@ export class BlurManager {
         // Check if this video has been watched (has progress bar)
         if (this.hasWatchProgress(titleElement)) {
           return; // Skip blurring for watched videos
+        }
+
+        // Check if this video should be blurred based on channel list
+        if (!ChannelDetector.shouldBlurVideo(titleElement, this.channelList)) {
+          // Remove blur if it was previously applied but shouldn't be anymore
+          if (titleElement.classList.contains('anti-spoil-title-blurred')) {
+            titleElement.style.filter = 'none';
+            titleElement.classList.remove('anti-spoil-title-blurred');
+          }
+          return;
         }
         
         if (!titleElement.classList.contains('anti-spoil-title-blurred')) {
@@ -131,6 +166,8 @@ export class BlurManager {
   }
 
   private blurDurations(): void {
+    if (!this.isBlurEnabled) return;
+
     // YouTube duration selectors - target the text elements that contain duration
     const durationSelectors = [
       '.badge-shape-wiz__text', // Duration badge text
@@ -147,6 +184,19 @@ export class BlurManager {
         // Check if this video has been watched (has progress bar)
         if (this.hasWatchProgress(durationElement)) {
           return; // Skip blurring for watched videos
+        }
+
+        // Check if this video should be blurred based on channel list
+        if (!ChannelDetector.shouldBlurVideo(durationElement, this.channelList)) {
+          // Restore original duration if it was previously hidden
+          if (durationElement.classList.contains('anti-spoil-duration-hidden')) {
+            const originalText = this.originalDurations.get(durationElement);
+            if (originalText) {
+              durationElement.textContent = originalText;
+            }
+            durationElement.classList.remove('anti-spoil-duration-hidden');
+          }
+          return;
         }
         
         // Check if the text looks like a duration (contains : and numbers)

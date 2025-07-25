@@ -4,10 +4,11 @@ A Chrome extension that blurs YouTube video thumbnails and titles to prevent spo
 
 ## Features
 
-- **Smart Blur**: Automatically blurs YouTube video thumbnails and titles
+- **Smart Blur**: Automatically blurs YouTube video thumbnails and titles from channels in your list
+- **Channel-Based Filtering**: Only blur videos from specific channels you add to your list  
 - **Hover to Peek**: Hover over blurred content to temporarily reduce blur for quick previews
 - **Toggle Control**: Easy on/off toggle via the extension popup
-- **Persistent Settings**: Remembers your preference across browser sessions
+- **Persistent Settings**: Remembers your preferences and channel list across browser sessions
 - **Dynamic Content**: Works with dynamically loaded YouTube content
 
 ## Installation
@@ -31,9 +32,10 @@ A Chrome extension that blurs YouTube video thumbnails and titles to prevent spo
 ## Usage
 
 1. **Navigate to YouTube**: The extension automatically works on any YouTube page
-2. **Toggle Blur**: Click the extension icon in the toolbar to enable/disable blurring
-3. **Preview Content**: Hover over blurred thumbnails or titles to peek at the content
-4. **Settings**: Your blur preference is automatically saved
+2. **Add Channels**: Click the extension icon and add channel names (e.g., @channelname) to your blur list
+3. **Toggle Blur**: Click the toggle button to enable/disable blurring for channels in your list
+4. **Preview Content**: Hover over blurred thumbnails or titles to peek at the content
+5. **Settings**: Your blur preference and channel list are automatically saved
 
 ## Development
 

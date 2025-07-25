@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Channel Detection Test</title>
+</head>
+<body>
+    <h1>Channel Detection Debugging</h1>
+    
+    <div>
+        <h2>Test Instructions:</h2>
+        <ol>
+            <li>Load the extension in Chrome</li>
+            <li>Go to YouTube homepage (youtube.com) - test that it works</li>
+            <li>Go to a specific channel page (e.g., youtube.com/@HitTheRoad)</li>
+            <li>Open DevTools Console to see debug messages</li>
+            <li>Add the channel to your blur list</li>
+            <li>Toggle blur ON</li>
+            <li>Check console for channel detection messages</li>
+        </ol>
+    </div>
+
+    <div>
+        <h2>Expected Behavior:</h2>
+        <ul>
+            <li><strong>Homepage:</strong> Videos should blur based on channel list</li>
+            <li><strong>Channel page:</strong> All videos should blur if that channel is in the list</li>
+        </ul>
+    </div>
+
+    <div>
+        <h2>Debug Messages to Look For:</h2>
+        <ul>
+            <li><code>ChannelDetector: Found video container</code></li>
+            <li><code>ChannelDetector: Detected channel name</code></li>
+            <li><code>ChannelDetector: Should blur video?</code></li>
+            <li><code>ChannelDetector: Detected from URL</code> (for channel pages)</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('Channel Detection Test Page Loaded');
+        console.log('Current URL:', window.location.href);
+        
+        // Test URL parsing
+        const testUrls = [
+            'https://www.youtube.com/@HitTheRoad',
+            'https://www.youtube.com/@TechReviews/videos',
+            'https://www.youtube.com/@channelname'
+        ];
+        
+        testUrls.forEach(url => {
+            const match = url.match(/@([^/?]+)/);
+            if (match) {
+                console.log(`URL: ${url} -> Channel: @${match[1]}`);
+            }
+        });
+    </script>
+</body>
+</html>

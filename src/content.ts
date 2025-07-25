@@ -35,11 +35,15 @@ class YouTubeBlurrer implements IYouTubeBlurrer {
   private async loadSettings(): Promise<void> {
     const settings = await this.settingsManager.loadSettings();
     this.isBlurEnabled = settings.blurEnabled;
+    // Update BlurManager with the latest channel list
+    this.blurManager.setChannelList(settings.channelList);
   }
 
   public async saveSettings(): Promise<void> {
     this.settingsManager.updateBlurEnabled(this.isBlurEnabled);
     await this.settingsManager.saveSettings();
+    // Update BlurManager with the latest channel list
+    this.blurManager.setChannelList(this.settingsManager.getChannels());
   }
 
   public async resetSettings(): Promise<void> {
@@ -53,11 +57,29 @@ class YouTubeBlurrer implements IYouTubeBlurrer {
 
   // Channel management methods
   public addChannel(channelName: string): boolean {
-    return this.settingsManager.addChannel(channelName);
+    const result = this.settingsManager.addChannel(channelName);
+    if (result) {
+      // Update BlurManager with the updated channel list
+      this.blurManager.setChannelList(this.settingsManager.getChannels());
+      // Re-apply blur logic to update any visible videos
+      if (this.isBlurEnabled) {
+        this.applyBlur();
+      }
+    }
+    return result;
   }
 
   public removeChannel(channelName: string): boolean {
-    return this.settingsManager.removeChannel(channelName);
+    const result = this.settingsManager.removeChannel(channelName);
+    if (result) {
+      // Update BlurManager with the updated channel list
+      this.blurManager.setChannelList(this.settingsManager.getChannels());
+      // Re-apply blur logic to update any visible videos
+      if (this.isBlurEnabled) {
+        this.applyBlur();
+      }
+    }
+    return result;
   }
 
   public getChannels(): string[] {
