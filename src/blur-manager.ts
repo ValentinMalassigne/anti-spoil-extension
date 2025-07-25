@@ -5,13 +5,24 @@ export class BlurManager {
   private originalDurations: Map<Element, string> = new Map(); // Store original duration values
   private isBlurEnabled: boolean = true;
   private channelList: string[] = [];
+  private hidePlayerControls: boolean = false;
+  private lastVideoUrl: string = ''; // Track URL changes to detect new videos
 
   constructor(isBlurEnabled: boolean = true) {
     this.isBlurEnabled = isBlurEnabled;
+    this.lastVideoUrl = window.location.href; // Initialize with current URL
   }
 
   public setBlurEnabled(enabled: boolean): void {
     this.isBlurEnabled = enabled;
+  }
+
+  public setPlayerControlsHidden(hidden: boolean): void {
+    this.hidePlayerControls = hidden;
+  }
+
+  public getPlayerControlsHidden(): boolean {
+    return this.hidePlayerControls;
   }
 
   public setChannelList(channelList: string[]): void {
@@ -23,9 +34,93 @@ export class BlurManager {
   }
 
   public applyBlur(): void {
+    this.checkForVideoChange(); // Check for video changes when applying blur too
     this.blurThumbnails();
     this.blurTitles();
     this.blurDurations();
+  }
+
+  public applyPlayerControlsHiding(): void {
+    this.checkForVideoChange();
+    this.hideVideoPlayerControls();
+  }
+
+  private checkForVideoChange(): void {
+    const currentUrl = window.location.href;
+    if (currentUrl !== this.lastVideoUrl) {
+      // Video has changed, clear the duration cache
+      this.clearDurationCache();
+      this.lastVideoUrl = currentUrl;
+      console.log('Video changed, cleared duration cache');
+    }
+  }
+
+  private clearDurationCache(): void {
+    // Remove the anti-spoil class from all previously hidden durations
+    const hiddenDurations = document.querySelectorAll('.ytp-time-duration.anti-spoil-player-controls-hidden');
+    hiddenDurations.forEach((duration: Element) => {
+      duration.classList.remove('anti-spoil-player-controls-hidden');
+    });
+    
+    // Clear the cache
+    this.originalDurations.clear();
+  }
+
+  private hideVideoPlayerControls(): void {
+    if (!this.hidePlayerControls) return;
+
+    // Hide progress bar elements
+    const progressBarSelectors = [
+      '.ytp-progress-bar-container', // Progress bar container
+      '.ytp-scrubber-container', // Scrubber (timeline) container
+      '.ytp-progress-bar-padding', // Progress bar padding
+      '.ytp-progress-list' // Progress bar list
+    ];
+
+    progressBarSelectors.forEach(selector => {
+      const controls = document.querySelectorAll(selector);
+      controls.forEach((control: Element) => {
+        const controlElement = control as HTMLElement;
+        
+        if (!controlElement.classList.contains('anti-spoil-player-controls-hidden')) {
+          controlElement.classList.add('anti-spoil-player-controls-hidden');
+          // Use opacity for progress bars to maintain functionality
+          controlElement.style.opacity = '0';
+          controlElement.style.pointerEvents = 'none';
+        }
+      });
+    });
+
+    // Replace duration text with "??"
+    const durationSelectors = [
+      '.ytp-time-duration' // Duration display only
+    ];
+
+    durationSelectors.forEach(selector => {
+      const durations = document.querySelectorAll(selector);
+      durations.forEach((duration: Element) => {
+        const durationElement = duration as HTMLElement;
+        
+        if (!durationElement.classList.contains('anti-spoil-player-controls-hidden')) {
+          // Always get the current text content as it may have changed for new videos
+          const currentText = durationElement.textContent?.trim();
+          
+          // Only store and replace if the current text looks like a duration (not already ??)
+          if (currentText && /^\d+:\d{2}(:\d{2})?$/.test(currentText)) {
+            // Clear any old stored duration for this element and store the new one
+            this.originalDurations.set(durationElement, currentText);
+            
+            durationElement.classList.add('anti-spoil-player-controls-hidden');
+            durationElement.textContent = '??:??';
+          } else if (currentText && currentText !== '??:??') {
+            // If it's not a standard duration format but also not already hidden, store and hide it
+            this.originalDurations.set(durationElement, currentText);
+            durationElement.classList.add('anti-spoil-player-controls-hidden');
+            durationElement.textContent = '??:??';
+          }
+        }
+      });
+    });
   }
 
   public removeBlur(): void {
@@ -55,6 +150,31 @@ export class BlurManager {
       }
       durationElement.classList.remove('anti-spoil-duration-hidden');
     });
+  }
+
+  public removePlayerControlsHiding(): void {
+    // Show hidden progress bars
+    const hiddenProgressBars = document.querySelectorAll('.ytp-progress-bar-container.anti-spoil-player-controls-hidden, .ytp-scrubber-container.anti-spoil-player-controls-hidden, .ytp-progress-bar-padding.anti-spoil-player-controls-hidden, .ytp-progress-list.anti-spoil-player-controls-hidden');
+    hiddenProgressBars.forEach((control: Element) => {
+      const controlElement = control as HTMLElement;
+      controlElement.style.opacity = '';
+      controlElement.style.pointerEvents = '';
+      controlElement.classList.remove('anti-spoil-player-controls-hidden');
+    });
+
+    // Restore original duration text
+    const hiddenDurations = document.querySelectorAll('.ytp-time-duration.anti-spoil-player-controls-hidden');
+    hiddenDurations.forEach((duration: Element) => {
+      const durationElement = duration as HTMLElement;
+      const originalText = this.originalDurations.get(durationElement);
+      if (originalText) {
+        durationElement.textContent = originalText;
+      }
+      durationElement.classList.remove('anti-spoil-player-controls-hidden');
+    });
+
+    // Clear the duration cache since we're turning off the feature
+    this.originalDurations.clear();
   }
 
   private blurThumbnails(): void {

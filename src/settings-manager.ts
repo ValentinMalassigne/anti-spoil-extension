@@ -2,7 +2,7 @@
 import { Settings } from './content-types';
 
 export class SettingsManager {
-  private settings: Settings = { blurEnabled: true, channelList: [] };
+  private settings: Settings = { blurEnabled: true, channelList: [], hidePlayerControls: false };
 
   public async loadSettings(): Promise<Settings> {
     try {
@@ -13,6 +13,7 @@ export class SettingsManager {
           this.settings = { 
             blurEnabled: true, 
             channelList: [], 
+            hidePlayerControls: false,
             ...syncResult['anti-spoil-settings'] 
           };
           return this.settings;
@@ -24,6 +25,7 @@ export class SettingsManager {
           this.settings = { 
             blurEnabled: true, 
             channelList: [], 
+            hidePlayerControls: false,
             ...localResult['anti-spoil-settings'] 
           };
           // Migrate to sync storage
@@ -32,7 +34,7 @@ export class SettingsManager {
         }
 
         // Default settings
-        this.settings = { blurEnabled: true, channelList: [] };
+        this.settings = { blurEnabled: true, channelList: [], hidePlayerControls: false };
         await this.saveSettings(); // Save default settings
         return this.settings;
       } else {
@@ -42,16 +44,17 @@ export class SettingsManager {
           this.settings = { 
             blurEnabled: true, 
             channelList: [], 
+            hidePlayerControls: false,
             ...JSON.parse(stored) 
           };
         } else {
-          this.settings = { blurEnabled: true, channelList: [] };
+          this.settings = { blurEnabled: true, channelList: [], hidePlayerControls: false };
         }
         return this.settings;
       }
     } catch (error) {
       console.log('Error loading settings, using defaults:', error);
-      this.settings = { blurEnabled: true, channelList: [] };
+      this.settings = { blurEnabled: true, channelList: [], hidePlayerControls: false };
       return this.settings;
     }
   }
@@ -76,13 +79,13 @@ export class SettingsManager {
 
   public async resetSettings(): Promise<Settings> {
     try {
-      this.settings = { blurEnabled: true, channelList: [] };
+      this.settings = { blurEnabled: true, channelList: [], hidePlayerControls: false };
       await this.saveSettings();
       console.log('Settings reset to defaults');
       return this.settings;
     } catch (error) {
       console.log('Error resetting settings:', error);
-      this.settings = { blurEnabled: true, channelList: [] };
+      this.settings = { blurEnabled: true, channelList: [], hidePlayerControls: false };
       return this.settings;
     }
   }
@@ -97,6 +100,14 @@ export class SettingsManager {
 
   public isBlurEnabled(): boolean {
     return this.settings.blurEnabled;
+  }
+
+  public updatePlayerControlsHidden(hidden: boolean): void {
+    this.settings.hidePlayerControls = hidden;
+  }
+
+  public isPlayerControlsHidden(): boolean {
+    return this.settings.hidePlayerControls;
   }
 
   // Channel management methods

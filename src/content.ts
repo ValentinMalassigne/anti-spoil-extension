@@ -8,6 +8,7 @@ import { IYouTubeBlurrer } from './interfaces';
 
 class YouTubeBlurrer implements IYouTubeBlurrer {
   public isBlurEnabled: boolean = true;
+  public isPlayerControlsHidden: boolean = false;
   private messageHandler: MessageHandler;
   private blurManager: BlurManager;
   private settingsManager: SettingsManager;
@@ -18,7 +19,12 @@ class YouTubeBlurrer implements IYouTubeBlurrer {
     this.settingsManager = new SettingsManager();
     this.messageHandler = new MessageHandler(this);
     this.blurManager = new BlurManager(this.isBlurEnabled);
-    this.observerManager = new ObserverManager(() => this.applyBlur());
+    this.observerManager = new ObserverManager(() => {
+      this.applyBlur();
+      if (this.isPlayerControlsHidden) {
+        this.applyPlayerControlsHiding();
+      }
+    });
     this.init();
   }
 
@@ -29,26 +35,37 @@ class YouTubeBlurrer implements IYouTubeBlurrer {
         this.applyBlur();
         this.observerManager.startObserving();
       }
+      if (this.isPlayerControlsHidden) {
+        this.applyPlayerControlsHiding();
+        if (!this.observerManager.isObserving()) {
+          this.observerManager.startObserving();
+        }
+      }
     });
   }
 
   private async loadSettings(): Promise<void> {
     const settings = await this.settingsManager.loadSettings();
     this.isBlurEnabled = settings.blurEnabled;
-    // Update BlurManager with the latest channel list
+    this.isPlayerControlsHidden = settings.hidePlayerControls;
+    // Update BlurManager with the latest settings
     this.blurManager.setChannelList(settings.channelList);
+    this.blurManager.setPlayerControlsHidden(settings.hidePlayerControls);
   }
 
   public async saveSettings(): Promise<void> {
     this.settingsManager.updateBlurEnabled(this.isBlurEnabled);
+    this.settingsManager.updatePlayerControlsHidden(this.isPlayerControlsHidden);
     await this.settingsManager.saveSettings();
-    // Update BlurManager with the latest channel list
+    // Update BlurManager with the latest settings
     this.blurManager.setChannelList(this.settingsManager.getChannels());
+    this.blurManager.setPlayerControlsHidden(this.isPlayerControlsHidden);
   }
 
   public async resetSettings(): Promise<void> {
     const settings = await this.settingsManager.resetSettings();
     this.isBlurEnabled = settings.blurEnabled;
+    this.isPlayerControlsHidden = settings.hidePlayerControls;
   }
 
   public getSettings(): Settings {
@@ -90,6 +107,10 @@ class YouTubeBlurrer implements IYouTubeBlurrer {
     this.blurManager.applyBlur();
   }
 
+  private applyPlayerControlsHiding(): void {
+    this.blurManager.applyPlayerControlsHiding();
+  }
+
   public async toggleBlur(): Promise<void> {
     // Save preference using the new saveSettings method
     await this.saveSettings();
@@ -108,8 +129,29 @@ class YouTubeBlurrer implements IYouTubeBlurrer {
     }
   }
 
+  public async togglePlayerControls(): Promise<void> {
+    // Save preference using the saveSettings method
+    await this.saveSettings();
+    
+    // Update BlurManager state
+    this.blurManager.setPlayerControlsHidden(this.isPlayerControlsHidden);
+
+    if (this.isPlayerControlsHidden) {
+      this.applyPlayerControlsHiding();
+      if (!this.observerManager.isObserving()) {
+        this.observerManager.startObserving();
+      }
+    } else {
+      this.removePlayerControlsHiding();
+    }
+  }
+
   private removeBlur(): void {
     this.blurManager.removeBlur();
+  }
+
+  private removePlayerControlsHiding(): void {
+    this.blurManager.removePlayerControlsHiding();
   }
 }
 

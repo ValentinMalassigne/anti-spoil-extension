@@ -2,7 +2,7 @@
 interface Settings {
   blurEnabled: boolean;
   channelList: string[]; // Array of channel names in format "@name"
-  // Future settings can be added here
+  hidePlayerControls: boolean;
 }
 
 interface MessageResponse {
@@ -11,11 +11,14 @@ interface MessageResponse {
   error?: string;
   settings?: Settings;
   channels?: string[];
+  playerControlsHidden?: boolean;
 }
 
 class PopupController {
   private toggleButton: HTMLButtonElement | null = null;
   private statusText: HTMLSpanElement | null = null;
+  private togglePlayerControlsButton: HTMLButtonElement | null = null;
+  private playerStatusText: HTMLSpanElement | null = null;
   private channelInput: HTMLInputElement | null = null;
   private addChannelBtn: HTMLButtonElement | null = null;
   private channelSearch: HTMLInputElement | null = null;
@@ -49,6 +52,10 @@ class PopupController {
     this.toggleButton = document.getElementById('toggle-blur') as HTMLButtonElement;
     this.statusText = document.getElementById('status-text') as HTMLSpanElement;
 
+    // Player controls elements
+    this.togglePlayerControlsButton = document.getElementById('toggle-player-controls') as HTMLButtonElement;
+    this.playerStatusText = document.getElementById('player-status-text') as HTMLSpanElement;
+
     // Channel management elements
     this.channelInput = document.getElementById('channel-input') as HTMLInputElement;
     this.addChannelBtn = document.getElementById('add-channel-btn') as HTMLButtonElement;
@@ -56,7 +63,7 @@ class PopupController {
     this.channelList = document.getElementById('channel-list') as HTMLUListElement;
     this.noChannelsDiv = document.getElementById('no-channels') as HTMLDivElement;
 
-    if (!this.toggleButton || !this.statusText) {
+    if (!this.toggleButton || !this.statusText || !this.togglePlayerControlsButton || !this.playerStatusText) {
       console.error('Main UI elements not found in DOM');
       return;
     }
@@ -64,6 +71,10 @@ class PopupController {
     // Setup event listeners
     this.toggleButton.addEventListener('click', () => {
       this.toggleBlur();
+    });
+
+    this.togglePlayerControlsButton.addEventListener('click', () => {
+      this.togglePlayerControls();
     });
 
     if (this.addChannelBtn && this.channelInput) {
@@ -107,6 +118,7 @@ class PopupController {
           
           if (response && response.success) {
             this.updateUI(response.enabled || false);
+            this.updatePlayerControlsUI(response.playerControlsHidden || false);
           } else {
             console.error('Failed to get status:', response?.error);
             this.showError('Extension not ready. Please refresh the page.');
@@ -388,6 +400,86 @@ class PopupController {
         this.statusText.textContent = 'Blur is OFF';
         this.statusText.className = 'status-off';
       }
+    }
+  }
+
+  private async togglePlayerControls(): Promise<void> {
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+
+      if (!activeTab || !activeTab.id) {
+        this.showPlayerControlsError('No active tab found');
+        return;
+      }
+
+      if (!activeTab.url?.includes('youtube.com')) {
+        this.showPlayerControlsError('Please navigate to YouTube to use this extension');
+        return;
+      }
+
+      try {
+        // First get current status
+        const statusResponse = await chrome.tabs.sendMessage(activeTab.id, { action: 'get-status' }) as MessageResponse;
+        
+        if (!statusResponse || !statusResponse.success) {
+          this.showPlayerControlsError('Extension not ready. Please refresh the page.');
+          return;
+        }
+
+        const currentStatus = statusResponse.playerControlsHidden || false;
+        const newStatus = !currentStatus;
+
+        // Toggle the player controls
+        const toggleResponse = await chrome.tabs.sendMessage(activeTab.id, { 
+          action: 'toggle-player-controls', 
+          playerControlsHidden: newStatus 
+        }) as MessageResponse;
+
+        if (toggleResponse && toggleResponse.success) {
+          this.updatePlayerControlsUI(newStatus);
+        } else {
+          this.showPlayerControlsError('Failed to toggle progress protection: ' + (toggleResponse?.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error communicating with content script:', error);
+        this.showPlayerControlsError('Extension not loaded. Please refresh the page.');
+      }
+    } catch (error) {
+      console.error('Error toggling player controls:', error);
+      this.showPlayerControlsError('Error communicating with extension');
+    }
+  }
+
+  private updatePlayerControlsUI(hidden: boolean): void {
+    if (this.togglePlayerControlsButton && this.playerStatusText) {
+      // Re-enable button in case it was disabled due to error
+      this.togglePlayerControlsButton.disabled = false;
+      
+      if (hidden) {
+        this.togglePlayerControlsButton.textContent = 'Show Progress & Duration';
+        this.togglePlayerControlsButton.className = 'btn btn-danger';
+        this.playerStatusText.textContent = 'Progress & Duration Hidden';
+        this.playerStatusText.className = 'status-on';
+      } else {
+        this.togglePlayerControlsButton.textContent = 'Hide Progress & Duration';
+        this.togglePlayerControlsButton.className = 'btn btn-success';
+        this.playerStatusText.textContent = 'Progress & Duration Visible';
+        this.playerStatusText.className = 'status-off';
+      }
+    }
+  }
+
+  private showPlayerControlsError(message: string): void {
+    if (this.playerStatusText) {
+      this.playerStatusText.textContent = message;
+      this.playerStatusText.className = 'status-error';
+    }
+    
+    if (this.togglePlayerControlsButton) {
+      this.togglePlayerControlsButton.disabled = true;
+      this.togglePlayerControlsButton.textContent = 'Error';
+      this.togglePlayerControlsButton.className = 'btn btn-disabled';
     }
   }
 }

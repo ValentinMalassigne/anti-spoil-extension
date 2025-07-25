@@ -6,6 +6,10 @@ export interface IYouTubeBlurrer {
   isBlurEnabled: boolean;
   toggleBlur(): Promise<void>;
 
+  // Player controls management
+  isPlayerControlsHidden: boolean;
+  togglePlayerControls(): Promise<void>;
+
   // Settings management
   saveSettings(): Promise<void>;
   resetSettings(): Promise<void>;

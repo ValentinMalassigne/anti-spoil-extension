@@ -30,8 +30,15 @@ export class MessageHandler {
       case 'toggle-blur':
         return this.handleToggleBlur(message, sendResponse);
       
+      case 'toggle-player-controls':
+        return this.handleTogglePlayerControls(message, sendResponse);
+      
       case 'get-status':
-        sendResponse({ enabled: this.blurrer.isBlurEnabled, success: true });
+        sendResponse({ 
+          enabled: this.blurrer.isBlurEnabled, 
+          playerControlsHidden: this.blurrer.isPlayerControlsHidden,
+          success: true 
+        });
         return false;
       
       case 'get-settings':
@@ -68,9 +75,27 @@ export class MessageHandler {
     return true; // Keep the messaging channel open for async response
   }
 
+  private handleTogglePlayerControls(message: Message, sendResponse: (response: MessageResponse) => void): boolean {
+    this.blurrer.isPlayerControlsHidden = message.playerControlsHidden || false;
+    this.blurrer.togglePlayerControls().then(() => {
+      sendResponse({ 
+        success: true, 
+        playerControlsHidden: this.blurrer.isPlayerControlsHidden 
+      });
+    }).catch((error: Error) => {
+      console.error('Error toggling player controls:', error);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true; // Keep the messaging channel open for async response
+  }
+
   private handleResetSettings(sendResponse: (response: MessageResponse) => void): boolean {
     this.blurrer.resetSettings().then(() => {
-      sendResponse({ success: true, enabled: this.blurrer.isBlurEnabled });
+      sendResponse({ 
+        success: true, 
+        enabled: this.blurrer.isBlurEnabled,
+        playerControlsHidden: this.blurrer.isPlayerControlsHidden
+      });
     }).catch((error: Error) => {
       console.error('Error resetting settings:', error);
       sendResponse({ success: false, error: error.message });

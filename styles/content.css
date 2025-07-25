@@ -25,3 +25,18 @@
 .anti-spoil-duration-hidden:hover {
   opacity: 0.8 !important;
 }
+
+/* Hide video player progress bars only */
+.ytp-progress-bar-container.anti-spoil-player-controls-hidden,
+.ytp-scrubber-container.anti-spoil-player-controls-hidden,
+.ytp-progress-bar-padding.anti-spoil-player-controls-hidden,
+.ytp-progress-list.anti-spoil-player-controls-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.2s ease !important;
+}
+
+/* Duration text replacement is handled in JavaScript */
+.ytp-time-duration.anti-spoil-player-controls-hidden {
+  font-family: monospace !important;
+}
