@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Layout Test</title>
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .video-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .anti-spoil-blurred {
+            filter: blur(10px) !important;
+            transition: filter 0.3s ease;
+        }
+        .anti-spoil-title-blurred {
+            filter: blur(5px) !important;
+            transition: filter 0.3s ease;
+        }
+        .anti-spoil-duration-hidden {
+            color: red !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Testing New YouTube Layout Support</h1>
+        
+        <div class="video-container">
+            <h2>New Layout (yt-lockup-view-model-wiz)</h2>
+            <div class="yt-lockup-view-model-wiz yt-lockup-view-model-wiz--horizontal yt-lockup-view-model-wiz--compact">
+                <a href="/watch?v=BZQG7nRSBAI&amp;pp=0gcJCccJAYcqIYzv" rel="nofollow" class="yt-lockup-view-model-wiz__content-image" aria-haspopup="false" tabindex="-1" aria-hidden="true" style="width: 168px;">
+                    <yt-thumbnail-view-model class="yt-thumbnail-view-model yt-thumbnail-view-model--aspect-ratio-16-by-9 yt-thumbnail-view-model--medium">
+                        <div class="yt-thumbnail-view-model__image">
+                            <img alt="" class="yt-core-image yt-core-image--fill-parent-height yt-core-image--fill-parent-width yt-core-image--content-mode-scale-aspect-fill yt-core-image--loaded" src="https://i.ytimg.com/vi/BZQG7nRSBAI/hqdefault.jpg?sqp=-oaymwEnCNACELwBSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&amp;rs=AOn4CLB0WqD777zTyrakM4rk8A_BT2JIHA">
+                        </div>
+                        <yt-thumbnail-overlay-badge-view-model class="yt-thumbnail-overlay-badge-view-model-wiz yt-thumbnail-overlay-badge-view-model-wiz--bottom-end yt-thumbnail-overlay-badge-view-model-wiz--medium">
+                            <yt-thumbnail-badge-view-model class="yt-thumbnail-badge-view-model-wiz yt-thumbnail-overlay-badge-view-model-wiz__badge">
+                                <badge-shape class="badge-shape-wiz badge-shape-wiz--thumbnail-default badge-shape-wiz--thumbnail-badge">
+                                    <div class="badge-shape-wiz__text">17:40</div>
+                                </badge-shape>
+                            </yt-thumbnail-badge-view-model>
+                        </yt-thumbnail-overlay-badge-view-model>
+                    </yt-thumbnail-view-model>
+                </a>
+                <div class="yt-lockup-view-model-wiz__metadata">
+                    <yt-lockup-metadata-view-model class="yt-lockup-metadata-view-model-wiz yt-lockup-metadata-view-model-wiz--horizontal yt-lockup-metadata-view-model-wiz--compact">
+                        <div class="yt-lockup-metadata-view-model-wiz__text-container">
+                            <h3 class="yt-lockup-metadata-view-model-wiz__heading-reset" title="🔥LE TRUC LE PLUS FUN ENTRE POTES SUR LOL (FOU RIRE)">
+                                <a href="/watch?v=BZQG7nRSBAI&amp;pp=0gcJCccJAYcqIYzv" rel="nofollow" class="yt-lockup-metadata-view-model-wiz__title" aria-haspopup="false" aria-label="🔥LE TRUC LE PLUS FUN ENTRE POTES SUR LOL (FOU RIRE) 17 minutes" style="">
+                                    <span class="yt-core-attributed-string yt-core-attributed-string--white-space-pre-wrap" dir="auto" role="text">🔥LE TRUC LE PLUS FUN ENTRE POTES SUR LOL (FOU RIRE)</span>
+                                </a>
+                            </h3>
+                            <div class="yt-lockup-metadata-view-model-wiz__metadata">
+                                <yt-content-metadata-view-model class="yt-content-metadata-view-model-wiz">
+                                    <div class="yt-content-metadata-view-model-wiz__metadata-row">
+                                        <span class="yt-core-attributed-string yt-content-metadata-view-model-wiz__metadata-text yt-core-attributed-string--white-space-pre-wrap yt-core-attributed-string--link-inherit-color" dir="auto" role="text">Skyyart</span>
+                                    </div>
+                                    <div class="yt-content-metadata-view-model-wiz__metadata-row">
+                                        <span class="yt-core-attributed-string yt-content-metadata-view-model-wiz__metadata-text yt-core-attributed-string--white-space-pre-wrap yt-core-attributed-string--link-inherit-color" dir="auto" role="text">1,1&nbsp;k&nbsp;vues</span>
+                                        <span aria-hidden="true" class="yt-content-metadata-view-model-wiz__delimiter"> • </span>
+                                        <span class="yt-core-attributed-string yt-content-metadata-view-model-wiz__metadata-text yt-core-attributed-string--white-space-pre-wrap yt-core-attributed-string--link-inherit-color" dir="auto" role="text">il y a 49 minutes</span>
+                                    </div>
+                                </yt-content-metadata-view-model>
+                            </div>
+                        </div>
+                    </yt-lockup-metadata-view-model>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-container">
+            <h2>Test Controls</h2>
+            <button onclick="testChannelDetection()">Test Channel Detection</button>
+            <button onclick="testBlur()">Test Blur</button>
+            <button onclick="addTestChannel()">Add @Skyyart to Channel List</button>
+            <button onclick="removeTestChannel()">Remove @Skyyart from Channel List</button>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Mock the extension functionality for testing
+        const testChannelList = [];
+        
+        function testChannelDetection() {
+            const container = document.querySelector('.yt-lockup-view-model-wiz');
+            const metadataContainer = container.querySelector('.yt-content-metadata-view-model-wiz');
+            const firstMetadataRow = metadataContainer.querySelector('.yt-content-metadata-view-model-wiz__metadata-row');
+            const channelText = firstMetadataRow.textContent.trim();
+            
+            // Apply same filtering logic as in our extension
+            const isValidChannelName = !channelText.includes('vues') && 
+                                     !channelText.includes('views') && 
+                                     !channelText.includes('il y a') && 
+                                     !channelText.includes('ago') &&
+                                     !channelText.includes('•') &&
+                                     !channelText.match(/^\d+/);
+            
+            const channelName = isValidChannelName ? 
+                (channelText.startsWith('@') ? channelText : `@${channelText}`) : null;
+            
+            document.getElementById('results').innerHTML = `
+                <p><strong>Channel Detection Results:</strong></p>
+                <p>Raw text: "${channelText}"</p>
+                <p>Is valid channel: ${isValidChannelName}</p>
+                <p>Detected channel: ${channelName}</p>
+            `;
+        }
+        
+        function testBlur() {
+            const thumbnail = document.querySelector('.yt-core-image');
+            const title = document.querySelector('.yt-core-attributed-string');
+            const duration = document.querySelector('.badge-shape-wiz__text');
+            
+            const shouldBlur = testChannelList.includes('@Skyyart');
+            
+            if (shouldBlur) {
+                thumbnail.classList.add('anti-spoil-blurred');
+                title.classList.add('anti-spoil-title-blurred');
+                duration.classList.add('anti-spoil-duration-hidden');
+                duration.textContent = '??:??';
+            } else {
+                thumbnail.classList.remove('anti-spoil-blurred');
+                title.classList.remove('anti-spoil-title-blurred');
+                duration.classList.remove('anti-spoil-duration-hidden');
+                duration.textContent = '17:40';
+            }
+            
+            document.getElementById('results').innerHTML = `
+                <p><strong>Blur Test Results:</strong></p>
+                <p>Should blur: ${shouldBlur}</p>
+                <p>Channel list: [${testChannelList.join(', ')}]</p>
+            `;
+        }
+        
+        function addTestChannel() {
+            if (!testChannelList.includes('@Skyyart')) {
+                testChannelList.push('@Skyyart');
+            }
+            testBlur();
+        }
+        
+        function removeTestChannel() {
+            const index = testChannelList.indexOf('@Skyyart');
+            if (index > -1) {
+                testChannelList.splice(index, 1);
+            }
+            testBlur();
+        }
+    </script>
+</body>
+</html>

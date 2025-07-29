@@ -48,6 +48,16 @@ export class ChannelDetector {
       }
     }
 
+    // Special handling for new yt-lockup-view-model-wiz layout
+    const isNewLayout = videoElement.closest('.yt-lockup-view-model-wiz') || videoElement.matches('.yt-lockup-view-model-wiz');
+    if (isNewLayout) {
+      const newLayoutChannelName = this.extractChannelFromNewLayout(videoElement);
+      if (newLayoutChannelName) {
+        console.log('ChannelDetector: Found channel from new layout:', newLayoutChannelName);
+        return newLayoutChannelName;
+      }
+    }
+
     // Try to find channel name in text content as fallback
     const textResult = this.extractChannelNameFromText(videoElement);
     if (textResult) {
@@ -100,6 +110,47 @@ export class ChannelDetector {
   }
 
   /**
+   * Extracts channel name from the new yt-lockup-view-model-wiz layout
+   * In this layout, the channel name appears as plain text in the metadata section
+   */
+  private static extractChannelFromNewLayout(element: Element): string | null {
+    // Find the container if we're not already in it
+    const container = element.closest('.yt-lockup-view-model-wiz') || 
+                     (element.matches('.yt-lockup-view-model-wiz') ? element : null);
+    
+    if (!container) {
+      return null;
+    }
+
+    // Look for channel name in the metadata section
+    // The channel name appears as the first text item in the metadata
+    const metadataContainer = container.querySelector('.yt-content-metadata-view-model-wiz');
+    if (metadataContainer) {
+      // Get the first metadata row which typically contains the channel name
+      const firstMetadataRow = metadataContainer.querySelector('.yt-content-metadata-view-model-wiz__metadata-row');
+      if (firstMetadataRow) {
+        const channelText = firstMetadataRow.textContent?.trim();
+        if (channelText && channelText !== '') {
+          // Filter out common non-channel text patterns
+          const isValidChannelName = !channelText.includes('vues') && 
+                                   !channelText.includes('views') && 
+                                   !channelText.includes('il y a') && 
+                                   !channelText.includes('ago') &&
+                                   !channelText.includes('•') &&
+                                   !channelText.match(/^\d+/); // Don't match view counts
+          
+          if (isValidChannelName) {
+            // Add @ prefix if not already present
+            return channelText.startsWith('@') ? channelText : `@${channelText}`;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Finds the closest video container element for a given element
    * This helps us identify the scope to search for channel information
    */
@@ -116,6 +167,9 @@ export class ChannelDetector {
       'ytd-grid-video-renderer',
       'ytd-channel-video-player-renderer',
       'ytd-shelf-renderer',
+      // New layout containers (recommended videos on video page)
+      'yt-lockup-view-model-wiz',
+      '.yt-lockup-view-model-wiz',
       // Additional containers that might be used
       '.ytd-video-renderer',
       '.ytd-rich-item-renderer'

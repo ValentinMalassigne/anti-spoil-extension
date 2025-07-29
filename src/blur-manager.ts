@@ -300,7 +300,11 @@ export class BlurManager {
       '#thumbnail img', // Thumbnail in various contexts
       '.ytp-videowall-still-image', // End screen thumbnails
       'ytd-playlist-thumbnail img', // Playlist thumbnails
-      'ytd-moving-thumbnail-renderer img' // Hover thumbnails
+      'ytd-moving-thumbnail-renderer img', // Hover thumbnails
+      // New layout selectors
+      '.yt-core-image', // New layout thumbnails
+      'yt-thumbnail-view-model img', // New layout container
+      '.yt-lockup-view-model-wiz img' // Direct selector for new layout
     ];
 
     thumbnailSelectors.forEach(selector => {
@@ -354,7 +358,11 @@ export class BlurManager {
       'h3.ytd-video-renderer', // Video titles in listings
       '.ytd-playlist-video-renderer #video-title', // Playlist video titles
       'h3.ytd-compact-video-renderer', // Sidebar video titles
-      '.ytd-rich-grid-media #video-title' // Grid layout titles
+      '.ytd-rich-grid-media #video-title', // Grid layout titles
+      // New layout selectors - more specific to avoid metadata
+      '.yt-lockup-metadata-view-model-wiz__title .yt-core-attributed-string', // Only title text within title container
+      'h3.yt-lockup-metadata-view-model-wiz__heading-reset .yt-core-attributed-string', // Specific heading text
+      '.yt-lockup-metadata-view-model-wiz__title' // Title container itself
     ];
 
     titleSelectors.forEach(selector => {
@@ -470,7 +478,8 @@ export class BlurManager {
                           element.closest('ytd-video-renderer') || 
                           element.closest('ytd-compact-video-renderer') ||
                           element.closest('ytd-playlist-video-renderer') ||
-                          element.closest('ytd-grid-video-renderer');
+                          element.closest('ytd-grid-video-renderer') ||
+                          element.closest('.yt-lockup-view-model-wiz'); // New layout
 
     if (!videoContainer) {
       return false;
