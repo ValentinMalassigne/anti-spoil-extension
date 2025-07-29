@@ -1,20 +1,22 @@
 # Player Progress Protection Feature
 
-The Anti-Spoil Extension now includes a new feature to hide the progress bar and replace video duration with "??" on the YouTube video player to prevent spoilers when watching videos.
+The Anti-Spoil Extension now includes a new feature to hide the progress bar and replace video duration with "??" on the YouTube video player for videos from channels in your blur list.
 
 ## New Feature Overview
 
 ### What it does:
-- Hides the progress bar/scrubber at the bottom of the video player
-- Replaces the video duration display with "??" (e.g., `10:45` becomes `??:??`)
+- Hides the progress bar/scrubber at the bottom of the video player **only for videos from channels in your list**
+- Replaces the video duration display with "??" (e.g., `10:45` becomes `??:??`) **only for videos from channels in your list**
 - **Keeps the current time visible** (e.g., `2:15` remains visible)
 - **Keeps all other controls** (play/pause, volume, settings, etc.)
+- **Works with the same channel list** as the blur feature
 
 ### How to use:
-1. **Navigate to any YouTube video page** (e.g., https://www.youtube.com/watch?v=...)
-2. **Click the extension icon** in your browser toolbar
-3. **Use the "Hide Progress & Duration" button** in the new "Video Player Protection" section
-4. **Toggle on/off as needed** - settings are saved automatically
+1. **Add channels to your blur list** first (same list used for both features)
+2. **Navigate to any YouTube video page** from a channel in your list
+3. **Click the extension icon** in your browser toolbar
+4. **Use the "Toggle Player Protection" button** in the "Video Player Protection" section
+5. **Toggle on/off as needed** - settings are saved automatically
 
 ## Technical Implementation
 
@@ -47,34 +49,38 @@ The extension modifies these YouTube player elements:
 ## User Experience
 
 ### Benefits:
-- **Prevents duration spoilers** - You won't accidentally see how much time is left
-- **Progress protection** - No visual indication of video progress
+- **Channel-specific protection** - Only affects videos from channels you choose
+- **Prevents duration spoilers** - You won't accidentally see how much time is left for spoiler-prone content
+- **Progress protection** - No visual indication of video progress for selected channels
 - **Maintains usability** - Current time and all controls remain functional
-- **Non-intrusive** - Only hides the specific spoiler elements
+- **Non-intrusive** - Only affects videos from channels in your list
 - **Flexible control** - Easy to toggle on/off per need
+- **Unified with blur feature** - Uses the same channel list for consistency
 
 ### Use Cases:
-- **TV shows/movies** - Avoid knowing when episodes/scenes will end
-- **Gaming videos** - Don't spoil boss fight durations or completion times
-- **Suspenseful content** - Maintain tension without time awareness
-- **Educational content** - Focus on learning without time pressure
-- **Live streams/premieres** - Enjoy content without duration context
+- **TV show channels** - Avoid knowing when episodes will end for channels that post full episodes
+- **Gaming channels** - Don't spoil boss fight durations or completion times for specific gaming channels
+- **Movie review channels** - Hide duration for channels that might spoil movie lengths
+- **Educational series** - Focus on learning without time pressure for specific educational channels
+- **Live streams/premieres** - Enjoy content without duration context for followed channels
 
 ## Testing the Feature
 
 ### Test Steps:
 1. **Load the extension** in Chrome (chrome://extensions/)
-2. **Navigate to YouTube** and open any video
-3. **Click the extension icon**
-4. **Toggle "Hide Player Controls"** - should hide duration/progress
-5. **Toggle again** - should restore controls
-6. **Refresh the page** - settings should persist
-7. **Try different videos** - should work across all video pages
+2. **Add at least one channel** to your blur list (e.g., @TestChannel)
+3. **Navigate to YouTube** and open a video from that channel
+4. **Click the extension icon**
+5. **Toggle "Player Protection"** - should hide duration/progress for videos from listed channels
+6. **Navigate to a video from a different channel** (not in your list) - controls should remain visible
+7. **Toggle again** - should restore controls for listed channels
+8. **Refresh the page** - settings should persist
 
 ### Expected Behavior:
-- ✅ Video duration text changes from `10:45` to `??:??`
-- ✅ Progress bar becomes invisible but functional
+- ✅ Video duration text changes from `10:45` to `??:??` **only for videos from channels in your list**
+- ✅ Progress bar becomes invisible **only for videos from channels in your list**
 - ✅ Current time remains visible (e.g., `2:15 / ??:??`)
+- ✅ Videos from channels **not in your list** show normal duration and progress
 - ✅ All other controls remain functional (play, pause, volume, etc.)
 - ✅ Settings persist across page loads
 - ✅ Can toggle independently of blur feature

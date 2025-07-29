@@ -69,6 +69,13 @@ export class BlurManager {
   private hideVideoPlayerControls(): void {
     if (!this.hidePlayerControls) return;
 
+    // Check if we should hide controls based on channel list
+    if (!this.shouldHidePlayerControlsForCurrentVideo()) {
+      // If we shouldn't hide controls for this video, make sure they're visible
+      this.removePlayerControlsHiding();
+      return;
+    }
+
     // Hide progress bar elements
     const progressBarSelectors = [
       '.ytp-progress-bar-container', // Progress bar container
@@ -121,6 +128,113 @@ export class BlurManager {
         }
       });
     });
+  }
+
+  private shouldHidePlayerControlsForCurrentVideo(): boolean {
+    if (this.channelList.length === 0) {
+      // If no channels in list, don't hide controls
+      return false;
+    }
+
+    // Try to detect the channel from various sources
+    // First, check if we're on a video page by looking for the player
+    const videoPlayer = document.querySelector('#movie_player, .html5-video-player');
+    if (!videoPlayer) {
+      console.log('BlurManager: No video player found, not hiding controls');
+      return false;
+    }
+
+    // Method 1: Check if we're on a channel page
+    const pageChannelName = this.detectChannelFromPageContext();
+    if (pageChannelName) {
+      const shouldHide = this.channelList.some(listedChannel => 
+        listedChannel.toLowerCase() === pageChannelName.toLowerCase()
+      );
+      console.log('BlurManager: Channel page detected:', pageChannelName, 'Should hide controls:', shouldHide);
+      return shouldHide;
+    }
+
+    // Method 2: Look for channel info in the video page
+    const channelSelectors = [
+      // Video page channel info
+      'ytd-video-owner-renderer .ytd-channel-name a',
+      '.ytd-channel-name a',
+      '#channel-name a',
+      '#owner-sub-count a',
+      'a[href*="/@"]',
+      '.yt-simple-endpoint[href*="/@"]'
+    ];
+
+    for (const selector of channelSelectors) {
+      const channelLink = document.querySelector(selector) as HTMLAnchorElement;
+      if (channelLink) {
+        const channelName = this.extractChannelNameFromLink(channelLink);
+        if (channelName) {
+          const shouldHide = this.channelList.some(listedChannel => 
+            listedChannel.toLowerCase() === channelName.toLowerCase()
+          );
+          console.log('BlurManager: Detected channel for player controls:', channelName, 'Should hide:', shouldHide);
+          return shouldHide;
+        }
+      }
+    }
+
+    console.log('BlurManager: No channel detected for current video, not hiding controls');
+    return false;
+  }
+
+  private extractChannelNameFromLink(channelLink: HTMLAnchorElement): string | null {
+    // Try to get from href attribute (e.g., /@channelname)
+    const href = channelLink.href;
+    if (href) {
+      const atMatch = href.match(/@([^/?]+)/);
+      if (atMatch) {
+        return `@${atMatch[1]}`;
+      }
+    }
+
+    // Try to get from text content
+    const text = channelLink.textContent?.trim();
+    if (text) {
+      // If it already starts with @, return as is
+      if (text.startsWith('@')) {
+        return text;
+      }
+      // Otherwise, add @ prefix
+      return `@${text}`;
+    }
+
+    return null;
+  }
+
+  private detectChannelFromPageContext(): string | null {
+    const currentUrl = window.location.href;
+
+    // Check if we're on a channel page
+    // Pattern 1: youtube.com/@channelname
+    const channelMatch = currentUrl.match(/youtube\.com\/@([^/?#]+)/);
+    if (channelMatch) {
+      const result = `@${channelMatch[1]}`;
+      console.log('BlurManager: Detected from URL pattern 1:', result);
+      return result;
+    }
+
+    // Pattern 2: youtube.com/channel/UC... or youtube.com/c/channelname  
+    const legacyMatch = currentUrl.match(/youtube\.com\/(?:channel\/UC[^/?#]+|c\/([^/?#]+))/);
+    if (legacyMatch) {
+      // For legacy URLs, try to get channel name from page header
+      const channelHeader = document.querySelector('#channel-name .ytd-channel-name, .ytd-channel-name, [id="channel-name"]');
+      if (channelHeader) {
+        const channelText = channelHeader.textContent?.trim();
+        if (channelText) {
+          const result = channelText.startsWith('@') ? channelText : `@${channelText}`;
+          console.log('BlurManager: Detected from legacy URL header:', result);
+          return result;
+        }
+      }
+    }
+
+    return null;
   }
 
   public removeBlur(): void {
