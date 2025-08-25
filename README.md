@@ -47,24 +47,6 @@ A Chrome extension that blurs YouTube video thumbnails and titles to prevent spo
 - `npm run build` - Create production build
 - `npm run clean` - Clean build directory
 
-### Project Structure
-
-```
-anti-spoil-extension/
-├── src/
-│   ├── content.ts      # Content script (runs on YouTube pages)
-│   ├── popup.ts        # Popup interface script
-│   └── types.d.ts      # TypeScript declarations
-├── styles/
-│   ├── content.css     # Content script styles
-│   └── popup.css       # Popup interface styles
-├── icons/              # Extension icons
-├── manifest.json       # Chrome extension manifest
-├── popup.html          # Popup interface HTML
-├── webpack.config.js   # Build configuration
-└── package.json        # Dependencies and scripts
-```
-
 ### Technical Details
 
 - **Manifest Version**: 3 (latest Chrome extension standard)

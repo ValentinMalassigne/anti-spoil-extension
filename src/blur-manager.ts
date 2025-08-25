@@ -1,5 +1,16 @@
 // Manages the blur functionality for YouTube elements
 import { ChannelDetector } from './channel-detector';
+import {
+  PLAYER_PROGRESS_BAR_SELECTORS,
+  PLAYER_DURATION_ONLY_SELECTORS,
+  VIDEO_PAGE_CHANNEL_LINK_SELECTORS,
+  THUMBNAIL_SELECTORS,
+  TITLE_SELECTORS,
+  DURATION_SELECTORS,
+  CSS_CLASSES,
+  DURATION_PLACEHOLDER,
+  WATCH_PROGRESS_INDICATOR_SELECTORS,
+} from './constants';
 
 export class BlurManager {
   private originalDurations: Map<Element, string> = new Map(); // Store original duration values
@@ -57,9 +68,9 @@ export class BlurManager {
 
   private clearDurationCache(): void {
     // Remove the anti-spoil class from all previously hidden durations
-    const hiddenDurations = document.querySelectorAll('.ytp-time-duration.anti-spoil-player-controls-hidden');
+    const hiddenDurations = document.querySelectorAll(`.ytp-time-duration.${CSS_CLASSES.PLAYER_CONTROLS_HIDDEN}`);
     hiddenDurations.forEach((duration: Element) => {
-      duration.classList.remove('anti-spoil-player-controls-hidden');
+      duration.classList.remove(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN);
     });
     
     // Clear the cache
@@ -77,20 +88,15 @@ export class BlurManager {
     }
 
     // Hide progress bar elements
-    const progressBarSelectors = [
-      '.ytp-progress-bar-container', // Progress bar container
-      '.ytp-scrubber-container', // Scrubber (timeline) container
-      '.ytp-progress-bar-padding', // Progress bar padding
-      '.ytp-progress-list' // Progress bar list
-    ];
+    const progressBarSelectors = PLAYER_PROGRESS_BAR_SELECTORS;
 
     progressBarSelectors.forEach(selector => {
       const controls = document.querySelectorAll(selector);
       controls.forEach((control: Element) => {
         const controlElement = control as HTMLElement;
         
-        if (!controlElement.classList.contains('anti-spoil-player-controls-hidden')) {
-          controlElement.classList.add('anti-spoil-player-controls-hidden');
+        if (!controlElement.classList.contains(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN)) {
+          controlElement.classList.add(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN);
           // Use opacity for progress bars to maintain functionality
           controlElement.style.opacity = '0';
           controlElement.style.pointerEvents = 'none';
@@ -98,32 +104,27 @@ export class BlurManager {
       });
     });
 
-    // Replace duration text with "??"
-    const durationSelectors = [
-      '.ytp-time-duration' // Duration display only
-    ];
+    // Replace duration text with placeholder
+    const durationSelectors = PLAYER_DURATION_ONLY_SELECTORS;
 
     durationSelectors.forEach(selector => {
       const durations = document.querySelectorAll(selector);
       durations.forEach((duration: Element) => {
         const durationElement = duration as HTMLElement;
         
-        if (!durationElement.classList.contains('anti-spoil-player-controls-hidden')) {
+        if (!durationElement.classList.contains(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN)) {
           // Always get the current text content as it may have changed for new videos
           const currentText = durationElement.textContent?.trim();
           
-          // Only store and replace if the current text looks like a duration (not already ??)
+          // Only store and replace if the current text looks like a duration (not already placeholder)
           if (currentText && /^\d+:\d{2}(:\d{2})?$/.test(currentText)) {
-            // Clear any old stored duration for this element and store the new one
             this.originalDurations.set(durationElement, currentText);
-            
-            durationElement.classList.add('anti-spoil-player-controls-hidden');
-            durationElement.textContent = '??:??';
-          } else if (currentText && currentText !== '??:??') {
-            // If it's not a standard duration format but also not already hidden, store and hide it
+            durationElement.classList.add(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN);
+            durationElement.textContent = DURATION_PLACEHOLDER;
+          } else if (currentText && currentText !== DURATION_PLACEHOLDER) {
             this.originalDurations.set(durationElement, currentText);
-            durationElement.classList.add('anti-spoil-player-controls-hidden');
-            durationElement.textContent = '??:??';
+            durationElement.classList.add(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN);
+            durationElement.textContent = DURATION_PLACEHOLDER;
           }
         }
       });
@@ -136,7 +137,6 @@ export class BlurManager {
       return false;
     }
 
-    // Try to detect the channel from various sources
     // First, check if we're on a video page by looking for the player
     const videoPlayer = document.querySelector('#movie_player, .html5-video-player');
     if (!videoPlayer) {
@@ -145,7 +145,7 @@ export class BlurManager {
     }
 
     // Method 1: Check if we're on a channel page
-    const pageChannelName = this.detectChannelFromPageContext();
+    const pageChannelName = ChannelDetector.detectChannelFromPageContext();
     if (pageChannelName) {
       const shouldHide = this.channelList.some(listedChannel => 
         listedChannel.toLowerCase() === pageChannelName.toLowerCase()
@@ -155,20 +155,12 @@ export class BlurManager {
     }
 
     // Method 2: Look for channel info in the video page
-    const channelSelectors = [
-      // Video page channel info
-      'ytd-video-owner-renderer .ytd-channel-name a',
-      '.ytd-channel-name a',
-      '#channel-name a',
-      '#owner-sub-count a',
-      'a[href*="/@"]',
-      '.yt-simple-endpoint[href*="/@"]'
-    ];
+    const channelSelectors = VIDEO_PAGE_CHANNEL_LINK_SELECTORS;
 
     for (const selector of channelSelectors) {
       const channelLink = document.querySelector(selector) as HTMLAnchorElement;
       if (channelLink) {
-        const channelName = this.extractChannelNameFromLink(channelLink);
+        const channelName = ChannelDetector.extractChannelNameFromLink(channelLink);
         if (channelName) {
           const shouldHide = this.channelList.some(listedChannel => 
             listedChannel.toLowerCase() === channelName.toLowerCase()
@@ -183,108 +175,54 @@ export class BlurManager {
     return false;
   }
 
-  private extractChannelNameFromLink(channelLink: HTMLAnchorElement): string | null {
-    // Try to get from href attribute (e.g., /@channelname)
-    const href = channelLink.href;
-    if (href) {
-      const atMatch = href.match(/@([^/?]+)/);
-      if (atMatch) {
-        return `@${atMatch[1]}`;
-      }
-    }
-
-    // Try to get from text content
-    const text = channelLink.textContent?.trim();
-    if (text) {
-      // If it already starts with @, return as is
-      if (text.startsWith('@')) {
-        return text;
-      }
-      // Otherwise, add @ prefix
-      return `@${text}`;
-    }
-
-    return null;
-  }
-
-  private detectChannelFromPageContext(): string | null {
-    const currentUrl = window.location.href;
-
-    // Check if we're on a channel page
-    // Pattern 1: youtube.com/@channelname
-    const channelMatch = currentUrl.match(/youtube\.com\/@([^/?#]+)/);
-    if (channelMatch) {
-      const result = `@${channelMatch[1]}`;
-      console.log('BlurManager: Detected from URL pattern 1:', result);
-      return result;
-    }
-
-    // Pattern 2: youtube.com/channel/UC... or youtube.com/c/channelname  
-    const legacyMatch = currentUrl.match(/youtube\.com\/(?:channel\/UC[^/?#]+|c\/([^/?#]+))/);
-    if (legacyMatch) {
-      // For legacy URLs, try to get channel name from page header
-      const channelHeader = document.querySelector('#channel-name .ytd-channel-name, .ytd-channel-name, [id="channel-name"]');
-      if (channelHeader) {
-        const channelText = channelHeader.textContent?.trim();
-        if (channelText) {
-          const result = channelText.startsWith('@') ? channelText : `@${channelText}`;
-          console.log('BlurManager: Detected from legacy URL header:', result);
-          return result;
-        }
-      }
-    }
-
-    return null;
-  }
-
   public removeBlur(): void {
     // Remove blur from thumbnails
-    const blurredThumbnails = document.querySelectorAll('.anti-spoil-blurred');
+    const blurredThumbnails = document.querySelectorAll(`.${CSS_CLASSES.THUMBNAIL_BLURRED}`);
     blurredThumbnails.forEach((img: Element) => {
       const imgElement = img as HTMLImageElement;
       imgElement.style.filter = 'none';
-      imgElement.classList.remove('anti-spoil-blurred');
+      imgElement.classList.remove(CSS_CLASSES.THUMBNAIL_BLURRED);
     });
 
     // Remove blur from titles
-    const blurredTitles = document.querySelectorAll('.anti-spoil-title-blurred');
+    const blurredTitles = document.querySelectorAll(`.${CSS_CLASSES.TITLE_BLURRED}`);
     blurredTitles.forEach((title: Element) => {
       const titleElement = title as HTMLElement;
       titleElement.style.filter = 'none';
-      titleElement.classList.remove('anti-spoil-title-blurred');
+      titleElement.classList.remove(CSS_CLASSES.TITLE_BLURRED);
     });
 
     // Restore original durations
-    const hiddenDurations = document.querySelectorAll('.anti-spoil-duration-hidden');
+    const hiddenDurations = document.querySelectorAll(`.${CSS_CLASSES.DURATION_HIDDEN}`);
     hiddenDurations.forEach((duration: Element) => {
       const durationElement = duration as HTMLElement;
       const originalText = this.originalDurations.get(durationElement);
       if (originalText) {
         durationElement.textContent = originalText;
       }
-      durationElement.classList.remove('anti-spoil-duration-hidden');
+      durationElement.classList.remove(CSS_CLASSES.DURATION_HIDDEN);
     });
   }
 
   public removePlayerControlsHiding(): void {
     // Show hidden progress bars
-    const hiddenProgressBars = document.querySelectorAll('.ytp-progress-bar-container.anti-spoil-player-controls-hidden, .ytp-scrubber-container.anti-spoil-player-controls-hidden, .ytp-progress-bar-padding.anti-spoil-player-controls-hidden, .ytp-progress-list.anti-spoil-player-controls-hidden');
+    const hiddenProgressBars = document.querySelectorAll(`.ytp-progress-bar-container.${CSS_CLASSES.PLAYER_CONTROLS_HIDDEN}, .ytp-scrubber-container.${CSS_CLASSES.PLAYER_CONTROLS_HIDDEN}, .ytp-progress-bar-padding.${CSS_CLASSES.PLAYER_CONTROLS_HIDDEN}, .ytp-progress-list.${CSS_CLASSES.PLAYER_CONTROLS_HIDDEN}`);
     hiddenProgressBars.forEach((control: Element) => {
       const controlElement = control as HTMLElement;
       controlElement.style.opacity = '';
       controlElement.style.pointerEvents = '';
-      controlElement.classList.remove('anti-spoil-player-controls-hidden');
+      controlElement.classList.remove(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN);
     });
 
     // Restore original duration text
-    const hiddenDurations = document.querySelectorAll('.ytp-time-duration.anti-spoil-player-controls-hidden');
+    const hiddenDurations = document.querySelectorAll(`.ytp-time-duration.${CSS_CLASSES.PLAYER_CONTROLS_HIDDEN}`);
     hiddenDurations.forEach((duration: Element) => {
       const durationElement = duration as HTMLElement;
       const originalText = this.originalDurations.get(durationElement);
       if (originalText) {
         durationElement.textContent = originalText;
       }
-      durationElement.classList.remove('anti-spoil-player-controls-hidden');
+      durationElement.classList.remove(CSS_CLASSES.PLAYER_CONTROLS_HIDDEN);
     });
 
     // Clear the duration cache since we're turning off the feature
@@ -294,18 +232,7 @@ export class BlurManager {
   private blurThumbnails(): void {
     if (!this.isBlurEnabled) return;
 
-    // YouTube thumbnail selectors
-    const thumbnailSelectors = [
-      'ytd-thumbnail img', // Main thumbnails
-      '#thumbnail img', // Thumbnail in various contexts
-      '.ytp-videowall-still-image', // End screen thumbnails
-      'ytd-playlist-thumbnail img', // Playlist thumbnails
-      'ytd-moving-thumbnail-renderer img', // Hover thumbnails
-      // New layout selectors
-      '.yt-core-image', // New layout thumbnails
-      'yt-thumbnail-view-model img', // New layout container
-      '.yt-lockup-view-model-wiz img' // Direct selector for new layout
-    ];
+    const thumbnailSelectors = THUMBNAIL_SELECTORS;
 
     thumbnailSelectors.forEach(selector => {
       const thumbnails = document.querySelectorAll(selector);
@@ -320,15 +247,15 @@ export class BlurManager {
         // Check if this video should be blurred based on channel list
         if (!ChannelDetector.shouldBlurVideo(img, this.channelList)) {
           // Remove blur if it was previously applied but shouldn't be anymore
-          if (img.classList.contains('anti-spoil-blurred')) {
+          if (img.classList.contains(CSS_CLASSES.THUMBNAIL_BLURRED)) {
             img.style.filter = 'none';
-            img.classList.remove('anti-spoil-blurred');
+            img.classList.remove(CSS_CLASSES.THUMBNAIL_BLURRED);
           }
           return;
         }
         
-        if (!img.classList.contains('anti-spoil-blurred')) {
-          img.classList.add('anti-spoil-blurred');
+        if (!img.classList.contains(CSS_CLASSES.THUMBNAIL_BLURRED)) {
+          img.classList.add(CSS_CLASSES.THUMBNAIL_BLURRED);
           img.style.filter = 'blur(10px)';
           img.style.transition = 'filter 0.3s ease';
           
@@ -352,18 +279,7 @@ export class BlurManager {
   private blurTitles(): void {
     if (!this.isBlurEnabled) return;
 
-    // YouTube title selectors
-    const titleSelectors = [
-      '#video-title', // Video titles
-      'h3.ytd-video-renderer', // Video titles in listings
-      '.ytd-playlist-video-renderer #video-title', // Playlist video titles
-      'h3.ytd-compact-video-renderer', // Sidebar video titles
-      '.ytd-rich-grid-media #video-title', // Grid layout titles
-      // New layout selectors - more specific to avoid metadata
-      '.yt-lockup-metadata-view-model-wiz__title .yt-core-attributed-string', // Only title text within title container
-      'h3.yt-lockup-metadata-view-model-wiz__heading-reset .yt-core-attributed-string', // Specific heading text
-      '.yt-lockup-metadata-view-model-wiz__title' // Title container itself
-    ];
+    const titleSelectors = TITLE_SELECTORS;
 
     titleSelectors.forEach(selector => {
       const titles = document.querySelectorAll(selector);
@@ -378,15 +294,15 @@ export class BlurManager {
         // Check if this video should be blurred based on channel list
         if (!ChannelDetector.shouldBlurVideo(titleElement, this.channelList)) {
           // Remove blur if it was previously applied but shouldn't be anymore
-          if (titleElement.classList.contains('anti-spoil-title-blurred')) {
+          if (titleElement.classList.contains(CSS_CLASSES.TITLE_BLURRED)) {
             titleElement.style.filter = 'none';
-            titleElement.classList.remove('anti-spoil-title-blurred');
+            titleElement.classList.remove(CSS_CLASSES.TITLE_BLURRED);
           }
           return;
         }
         
-        if (!titleElement.classList.contains('anti-spoil-title-blurred')) {
-          titleElement.classList.add('anti-spoil-title-blurred');
+        if (!titleElement.classList.contains(CSS_CLASSES.TITLE_BLURRED)) {
+          titleElement.classList.add(CSS_CLASSES.TITLE_BLURRED);
           titleElement.style.filter = 'blur(5px)';
           titleElement.style.transition = 'filter 0.3s ease';
           
@@ -410,12 +326,7 @@ export class BlurManager {
   private blurDurations(): void {
     if (!this.isBlurEnabled) return;
 
-    // YouTube duration selectors - target the text elements that contain duration
-    const durationSelectors = [
-      '.badge-shape-wiz__text', // Duration badge text
-      'span.ytd-thumbnail-overlay-time-status-renderer', // Alternative duration selector
-      '.ytp-time-duration' // Video player duration
-    ];
+    const durationSelectors = DURATION_SELECTORS;
 
     durationSelectors.forEach(selector => {
       const durations = document.querySelectorAll(selector);
@@ -431,25 +342,24 @@ export class BlurManager {
         // Check if this video should be blurred based on channel list
         if (!ChannelDetector.shouldBlurVideo(durationElement, this.channelList)) {
           // Restore original duration if it was previously hidden
-          if (durationElement.classList.contains('anti-spoil-duration-hidden')) {
+          if (durationElement.classList.contains(CSS_CLASSES.DURATION_HIDDEN)) {
             const originalText = this.originalDurations.get(durationElement);
             if (originalText) {
               durationElement.textContent = originalText;
             }
-            durationElement.classList.remove('anti-spoil-duration-hidden');
+            durationElement.classList.remove(CSS_CLASSES.DURATION_HIDDEN);
           }
           return;
         }
         
         // Check if the text looks like a duration (contains : and numbers)
-        if (text && /^\d+:\d{2}(:\d{2})?$/.test(text) && !durationElement.classList.contains('anti-spoil-duration-hidden')) {
+        if (text && /^\d+:\d{2}(:\d{2})?$/.test(text) && !durationElement.classList.contains(CSS_CLASSES.DURATION_HIDDEN)) {
           // Store original duration if not already stored
           if (!this.originalDurations.has(durationElement)) {
             this.originalDurations.set(durationElement, text);
           }
           
-          durationElement.classList.add('anti-spoil-duration-hidden');
-
+          durationElement.classList.add(CSS_CLASSES.DURATION_HIDDEN);
           durationElement.textContent = '?? : ??';
           
           // Add hover effect to show real duration temporarily
@@ -473,28 +383,19 @@ export class BlurManager {
   }
 
   private hasWatchProgress(element: Element): boolean {
-    // Find the closest video container that might contain the progress bar
-    const videoContainer = element.closest('ytd-rich-item-renderer') || 
-                          element.closest('ytd-video-renderer') || 
-                          element.closest('ytd-compact-video-renderer') ||
-                          element.closest('ytd-playlist-video-renderer') ||
-                          element.closest('ytd-grid-video-renderer') ||
-                          element.closest('.yt-lockup-view-model-wiz'); // New layout
+    const container = element.closest('ytd-rich-item-renderer') || 
+                      element.closest('ytd-video-renderer') || 
+                      element.closest('ytd-compact-video-renderer') ||
+                      element.closest('ytd-playlist-video-renderer') ||
+                      element.closest('ytd-grid-video-renderer') ||
+                      element.closest('.yt-lockup-view-model-wiz');
 
-    if (!videoContainer) {
-      return false;
-    }
+    if (!container) return false;
 
-    // Look for the progress bar indicator
-    const progressBar = videoContainer.querySelector('#progress') ||
-                       videoContainer.querySelector('.ytd-thumbnail-overlay-resume-playback-renderer #progress') ||
-                       videoContainer.querySelector('[id="progress"]');
+    const progressBar = WATCH_PROGRESS_INDICATOR_SELECTORS
+      .map(sel => container.querySelector(sel))
+      .find(Boolean);
 
-    // Also check for other watched indicators
-    const watchedIndicator = videoContainer.querySelector('.ytd-thumbnail-overlay-resume-playback-renderer') ||
-                            videoContainer.querySelector('[aria-label*="watched"]') ||
-                            videoContainer.querySelector('[aria-label*="Watched"]');
-
-    return !!(progressBar || watchedIndicator);
+    return !!progressBar;
   }
 }

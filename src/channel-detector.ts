@@ -1,4 +1,6 @@
 // Channel detection utility for YouTube video elements
+import { CHANNEL_LINK_SELECTORS, VIDEO_CONTAINER_SELECTORS, PAGE_CHANNEL_HEADER_SELECTORS } from './constants';
+
 export class ChannelDetector {
   private static pageChannelCache: string | null | undefined = undefined;
   private static lastUrl: string = '';
@@ -10,29 +12,7 @@ export class ChannelDetector {
    */
   public static getChannelNameFromVideoElement(videoElement: Element): string | null {
     // Common selectors for channel names/links on YouTube
-    const channelSelectors = [
-      // Main video page
-      'ytd-video-owner-renderer .ytd-channel-name a',
-      // Video listings/search results
-      '.ytd-channel-name a',
-      // Compact video renderer (sidebar)
-      'ytd-compact-video-renderer .ytd-channel-name a',
-      // Rich grid media (homepage)
-      'ytd-rich-grid-media .ytd-channel-name a',
-      // Video meta info
-      '#channel-name a',
-      '#owner-sub-count a',
-      // Alternative selectors
-      'a[href*="/channel/"], a[href*="/@"]',
-      '.yt-simple-endpoint[href*="/@"]',
-      // Channel page specific selectors
-      '.ytd-grid-video-renderer .ytd-channel-name a',
-      '.metadata-line a[href*="/@"]',
-      '.ytd-video-meta-block a[href*="/@"]',
-      // More generic selectors
-      'a[href*="youtube.com/@"]',
-      '[href*="/@"]'
-    ];
+    const channelSelectors = CHANNEL_LINK_SELECTORS;
 
     console.log('ChannelDetector: Searching for channel in element:', videoElement.tagName, videoElement.className);
 
@@ -69,7 +49,7 @@ export class ChannelDetector {
   /**
    * Extracts channel name from a channel link element
    */
-  private static extractChannelNameFromLink(channelLink: HTMLAnchorElement): string | null {
+  public static extractChannelNameFromLink(channelLink: HTMLAnchorElement): string | null {
     // Try to get from href attribute (e.g., /@channelname)
     const href = channelLink.href;
     if (href) {
@@ -156,24 +136,7 @@ export class ChannelDetector {
    */
   public static findVideoContainer(element: Element): Element | null {
     // Common YouTube video container selectors
-    const containerSelectors = [
-      'ytd-video-renderer',
-      'ytd-compact-video-renderer', 
-      'ytd-rich-item-renderer',
-      'ytd-playlist-video-renderer',
-      'ytd-grid-video-renderer',
-      'ytd-video-meta-block',
-      // Channel page specific containers
-      'ytd-grid-video-renderer',
-      'ytd-channel-video-player-renderer',
-      'ytd-shelf-renderer',
-      // New layout containers (recommended videos on video page)
-      'yt-lockup-view-model-wiz',
-      '.yt-lockup-view-model-wiz',
-      // Additional containers that might be used
-      '.ytd-video-renderer',
-      '.ytd-rich-item-renderer'
-    ];
+    const containerSelectors = VIDEO_CONTAINER_SELECTORS;
 
     let current = element;
     
@@ -249,7 +212,7 @@ export class ChannelDetector {
    * Special detection for channel pages where videos don't have explicit channel info
    * On a channel page, we can infer the channel from the page URL or header
    */
-  private static detectChannelFromPageContext(): string | null {
+  public static detectChannelFromPageContext(): string | null {
     // Cache channel detection for performance (clear cache when URL changes)
     const currentUrl = window.location.href;
     if (currentUrl !== this.lastUrl) {
@@ -263,7 +226,7 @@ export class ChannelDetector {
 
     // Check if we're on a channel page
     // Pattern 1: youtube.com/@channelname
-    const channelMatch = currentUrl.match(/youtube\.com\/@([^/?#]+)/);
+    const channelMatch = currentUrl.match(/youtube\.com\/@([^\/?#]+)/);
     if (channelMatch) {
       const result = `@${channelMatch[1]}`;
       console.log('ChannelDetector: Detected from URL pattern 1:', result);
@@ -272,7 +235,7 @@ export class ChannelDetector {
     }
 
     // Pattern 2: youtube.com/channel/UC... or youtube.com/c/channelname  
-    const legacyMatch = currentUrl.match(/youtube\.com\/(?:channel\/UC[^/?#]+|c\/([^/?#]+))/);
+    const legacyMatch = currentUrl.match(/youtube\.com\/(?:channel\/UC[^\/?#]+|c\/([^\/?#]+))/);
     if (legacyMatch) {
       // For legacy URLs, try to get channel name from page header
       const channelHeader = document.querySelector('#channel-name .ytd-channel-name, .ytd-channel-name, [id="channel-name"]');
@@ -295,12 +258,7 @@ export class ChannelDetector {
     
     if (isChannelPage) {
       // Try to get channel name from page header or meta
-      const channelSelectors = [
-        '#channel-name .ytd-channel-name',
-        '.ytd-channel-name',
-        '[id="channel-name"]',
-        'ytd-channel-header-renderer [id="text"]'
-      ];
+      const channelSelectors = PAGE_CHANNEL_HEADER_SELECTORS;
 
       for (const selector of channelSelectors) {
         const element = document.querySelector(selector);
