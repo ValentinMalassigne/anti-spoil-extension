@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anti-Spoil Extension</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-content">
+        <div class="header-icon">🙈</div>
+        <div class="header-text">
+          <h1>Anti-Spoil</h1>
+          <p class="channel-count" id="channel-count">0 chaîne bloquée</p>
+        </div>
+      </div>
+      <button class="settings-btn" id="settings-btn" title="Paramètres">⚙️</button>
+    </header>
+
+    <!-- Quick Add Section -->
+    <section class="quick-add" id="quick-add-section">
+      <div class="quick-add-content">
+        <div class="quick-add-icon">⚡</div>
+        <div class="quick-add-text">
+          <p>Ajouter cette chaîne</p>
+          <span class="current-channel-name" id="current-channel-name">Chargement...</span>
+        </div>
+        <button class="add-current-btn" id="add-current-btn">
+          <span class="btn-text">Ajouter</span>
+          <span class="btn-loading" style="display: none;">⏳</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Manual Add Section -->
+    <section class="manual-add">
+      <form class="add-form" id="add-form">
+        <div class="input-group">
+          <input 
+            type="url" 
+            id="channel-input" 
+            placeholder="URL de la chaîne YouTube ou nom..." 
+            class="channel-input"
+          >
+          <button type="submit" class="add-btn" id="add-btn">
+            <span class="btn-text">+</span>
+            <span class="btn-loading" style="display: none;">⏳</span>
+          </button>
+        </div>
+        <div class="input-error" id="input-error" style="display: none;"></div>
+      </form>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section" id="search-section" style="display: none;">
+      <div class="search-container">
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Rechercher dans vos chaînes..." 
+          class="search-input"
+        >
+        <button class="search-clear" id="search-clear" style="display: none;">×</button>
+      </div>
+    </section>
+
+    <!-- Channels List -->
+    <section class="channels-section">
+      <div class="channels-header">
+        <h3>Chaînes bloquées</h3>
+        <div class="list-controls">
+          <button class="control-btn" id="search-toggle" title="Rechercher">🔍</button>
+          <button class="control-btn" id="sort-btn" title="Trier">↕️</button>
+        </div>
+      </div>
+      
+      <div class="channels-list" id="channels-list">
+        <!-- Contenu généré dynamiquement -->
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">📺</div>
+          <h4>Aucune chaîne bloquée</h4>
+          <p>Ajoutez des chaînes YouTube pour éviter les spoils dans vos vidéos recommandées.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Actions -->
+    <footer class="popup-footer">
+      <div class="footer-actions">
+        <button class="footer-btn" id="export-btn" title="Exporter la liste">
+          📤 Exporter
+        </button>
+        <button class="footer-btn" id="import-btn" title="Importer une liste">
+          📥 Importer
+        </button>
+        <button class="footer-btn" id="help-btn" title="Aide">
+          ❓ Aide
+        </button>
+      </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>Chargement...</p>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="toast success-toast" id="success-toast" style="display: none;">
+      <span class="toast-icon">✅</span>
+      <span class="toast-message"></span>
+    </div>
+
+    <!-- Error Toast -->
+    <div class="toast error-toast" id="error-toast" style="display: none;">
+      <span class="toast-icon">❌</span>
+      <span class="toast-message"></span>
+    </div>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="file-input" accept=".json" style="display: none;">
+
+  <!-- Confirmation Modal -->
+  <div class="modal-overlay" id="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Confirmation</h3>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-message">Êtes-vous sûr de vouloir continuer ?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel">Annuler</button>
+        <button class="btn btn-primary" id="modal-confirm">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

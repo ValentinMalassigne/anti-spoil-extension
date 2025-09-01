@@ -1,22 +1,68 @@
 {
   "compilerOptions": {
+    // Version cible et modules
     "target": "ES2020",
-    "module": "ESNext",
+    "module": "ES2020",
     "moduleResolution": "node",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    
+    // Strictness TypeScript
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true,
+    
+    // Génération de code
     "outDir": "./dist",
     "rootDir": "./src",
-    "resolveJsonModule": true,
-    "types": ["chrome"]
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    
+    // Résolution des modules
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@utils/*": ["utils/*"],
+      "@background/*": ["background/*"],
+      "@content/*": ["content-scripts/*"],
+      "@popup/*": ["popup/*"],
+      "@storage/*": ["storage/*"],
+      "@types/*": ["types/*"]
+    },
+    
+    // Compatibilité
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    
+    // Développement
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    
+    // Chrome Extension spécifique
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "src/types/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
-  ]
+    "dist",
+    "docs",
+    "assets",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ],
+  "compileOnSave": true,
+  "ts-node": {
+    "esm": true
+  }
 }

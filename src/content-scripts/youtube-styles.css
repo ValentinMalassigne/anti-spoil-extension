@@ -1,0 +1,284 @@
+/**
+ * Anti-Spoil Extension - Styles YouTube Content Script
+ * CSS pour le floutage et les overlays sur YouTube
+ */
+
+/* =============================================================================
+   CLASSE PRINCIPALE DE FLOUTAGE
+   ============================================================================= */
+
+.anti-spoil-blurred {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* =============================================================================
+   OVERLAY INFORMATIF
+   ============================================================================= */
+
+.anti-spoil-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  color: white !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+  font-size: 14px !important;
+  text-align: center !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(4px) !important;
+  box-sizing: border-box !important;
+  padding: 16px !important;
+}
+
+.anti-spoil-message {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+  max-width: 280px !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+.anti-spoil-icon {
+  font-size: 24px !important;
+  opacity: 0.9 !important;
+  filter: none !important;
+}
+
+.anti-spoil-text {
+  line-height: 1.4 !important;
+  font-weight: 400 !important;
+}
+
+.anti-spoil-text strong {
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  color: #ff6b35 !important;
+  display: block !important;
+  margin-bottom: 4px !important;
+}
+
+/* =============================================================================
+   BOUTON DE RÉVÉLATION
+   ============================================================================= */
+
+.anti-spoil-reveal {
+  padding: 8px 16px !important;
+  background: linear-gradient(135deg, #ff6b35, #f7931e) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  outline: none !important;
+}
+
+.anti-spoil-reveal:hover {
+  background: linear-gradient(135deg, #e55a2b, #e8851a) !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.anti-spoil-reveal:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3) !important;
+}
+
+/* =============================================================================
+   ANIMATIONS DE FLOU
+   ============================================================================= */
+
+.anti-spoil-blur-thumbnail {
+  filter: blur(20px) !important;
+  transition: filter 0.3s ease !important;
+}
+
+.anti-spoil-blur-title {
+  filter: blur(5px) !important;
+  transition: filter 0.3s ease !important;
+}
+
+.anti-spoil-blur-metadata {
+  filter: blur(3px) !important;
+  transition: filter 0.3s ease !important;
+}
+
+/* Animation de révélation temporaire */
+.anti-spoil-revealing .anti-spoil-blur-thumbnail,
+.anti-spoil-revealing .anti-spoil-blur-title,
+.anti-spoil-revealing .anti-spoil-blur-metadata {
+  filter: none !important;
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================= */
+
+/* Adaptation pour petits conteneurs */
+@media (max-width: 200px) {
+  .anti-spoil-overlay {
+    font-size: 12px !important;
+    padding: 12px !important;
+  }
+  
+  .anti-spoil-message {
+    gap: 8px !important;
+    max-width: 160px !important;
+  }
+  
+  .anti-spoil-icon {
+    font-size: 20px !important;
+  }
+  
+  .anti-spoil-reveal {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Adaptation pour conteneurs très hauts */
+@media (min-height: 300px) {
+  .anti-spoil-message {
+    max-width: 320px !important;
+  }
+  
+  .anti-spoil-text {
+    font-size: 15px !important;
+  }
+}
+
+/* =============================================================================
+   ÉTATS SPÉCIAUX
+   ============================================================================= */
+
+/* État de survol du conteneur global */
+.anti-spoil-blurred:hover .anti-spoil-overlay {
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+
+/* État de chargement */
+.anti-spoil-loading {
+  opacity: 0.7 !important;
+}
+
+.anti-spoil-loading .anti-spoil-reveal {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* =============================================================================
+   INTÉGRATION YOUTUBE
+   ============================================================================= */
+
+/* Assure que l'overlay s'affiche correctement sur les éléments YouTube */
+ytd-rich-item-renderer.anti-spoil-blurred,
+ytd-video-renderer.anti-spoil-blurred,
+ytd-grid-video-renderer.anti-spoil-blurred,
+ytd-compact-video-renderer.anti-spoil-blurred {
+  position: relative !important;
+}
+
+/* Évite les conflits avec les styles YouTube */
+.anti-spoil-overlay * {
+  all: unset !important;
+  display: inline !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif !important;
+}
+
+.anti-spoil-overlay {
+  all: unset !important;
+  position: absolute !important;
+  display: flex !important;
+}
+
+.anti-spoil-message {
+  all: unset !important;
+  display: flex !important;
+}
+
+.anti-spoil-reveal {
+  all: unset !important;
+  display: inline-block !important;
+  cursor: pointer !important;
+}
+
+/* =============================================================================
+   THÈME SOMBRE YOUTUBE
+   ============================================================================= */
+
+/* Adaptation automatique au thème sombre de YouTube */
+[dark] .anti-spoil-overlay,
+html[dark] .anti-spoil-overlay {
+  background: rgba(15, 15, 15, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[dark] .anti-spoil-text,
+html[dark] .anti-spoil-text {
+  color: #f1f1f1 !important;
+}
+
+/* =============================================================================
+   ACCESSIBILITÉ
+   ============================================================================= */
+
+/* Support pour les utilisateurs qui préfèrent les animations réduites */
+@media (prefers-reduced-motion: reduce) {
+  .anti-spoil-overlay,
+  .anti-spoil-blur-thumbnail,
+  .anti-spoil-blur-title,
+  .anti-spoil-blur-metadata,
+  .anti-spoil-reveal {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Support pour les hauts contrastes */
+@media (prefers-contrast: high) {
+  .anti-spoil-overlay {
+    background: rgba(0, 0, 0, 0.95) !important;
+    border: 2px solid white !important;
+  }
+  
+  .anti-spoil-reveal {
+    border: 2px solid white !important;
+    background: #ff4500 !important;
+  }
+}
+
+/* Focus visible pour la navigation au clavier */
+.anti-spoil-reveal:focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: 2px !important;
+}
+
+/* =============================================================================
+   DEBUGGING (MODE DÉVELOPPEUR)
+   ============================================================================= */
+
+/* Classes de debug - visibles uniquement en mode développeur */
+.anti-spoil-debug .anti-spoil-overlay::before {
+  content: "DEBUG: Anti-Spoil Overlay Active" !important;
+  position: absolute !important;
+  top: -20px !important;
+  left: 0 !important;
+  font-size: 10px !important;
+  color: #ff6b35 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  z-index: 10000 !important;
+}

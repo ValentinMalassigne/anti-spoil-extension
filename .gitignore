@@ -1,5 +1,78 @@
-/.github
-/.vscode
-/dist
-/node_modules
-/package-lock.json
+# Dépendances
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build et distribution
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Environnement et configuration
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache et temporaires
+.cache/
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# IDE et éditeurs
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Système d'exploitation
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Tests
+coverage/
+.nyc_output/
+test-results/
+*.lcov
+
+# Extension packagée
+*.zip
+*.crx
+*.pem
+
+# Documentation générée
+docs/api/
+
+# TypeScript
+*.tsbuildinfo
+
+# Husky
+.husky/_/
+
+# Ignore les fichiers JavaScript générés (on ne commit que le TypeScript)
+# Sauf les fichiers de config qui sont volontairement en JS
+src/**/*.js
+src/**/*.js.map
+!.eslintrc.js
+!jest.config.js
+
+# Ignore les déclarations TypeScript générées
+src/**/*.d.ts
+!src/types/**/*.d.ts

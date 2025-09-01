@@ -1,6 +1,0 @@
-<!-- This is a placeholder SVG icon. Replace with actual PNG icons -->
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <rect width="16" height="16" rx="2" fill="#4A90E2"/>
-  <circle cx="8" cy="8" r="4" fill="white" opacity="0.8"/>
-  <text x="8" y="11" font-family="Arial" font-size="8" text-anchor="middle" fill="#4A90E2">AS</text>
-</svg>
