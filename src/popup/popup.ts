@@ -18,22 +18,49 @@ class PopupManager {
   private channelInput: HTMLInputElement;
   private addButton: HTMLButtonElement;
   private channelsContainer: HTMLElement;
-  private channelCount: HTMLElement;
   private loadingElement: HTMLElement;
   private emptyState: HTMLElement;
   private channels: IChannelData[] = [];
+  
+  // Quick Add elements
+  private quickAddSection: HTMLElement;
+  private currentChannelName: HTMLElement;
+  private addCurrentButton: HTMLButtonElement;
+  private currentChannelData: IChannelInput | null = null;
+  
+  // Modal elements
+  private modalOverlay: HTMLElement;
+  private modalTitle: HTMLElement;
+  private modalMessage: HTMLElement;
+  private modalConfirm: HTMLButtonElement;
+  private modalCancel: HTMLButtonElement;
+  private modalClose: HTMLButtonElement;
+  private modalConfirmCallback: (() => void) | null = null;
 
   constructor() {
     // Initialisation des éléments DOM
     this.channelInput = document.getElementById('channel-input') as HTMLInputElement;
     this.addButton = document.getElementById('add-btn') as HTMLButtonElement;
     this.channelsContainer = document.getElementById('channels-list') as HTMLElement;
-    this.channelCount = document.getElementById('channel-count') as HTMLElement;
     this.loadingElement = document.getElementById('loading-overlay') as HTMLElement;
     this.emptyState = document.getElementById('empty-state') as HTMLElement;
+    
+    // Quick Add elements
+    this.quickAddSection = document.getElementById('quick-add-section') as HTMLElement;
+    this.currentChannelName = document.getElementById('current-channel-name') as HTMLElement;
+    this.addCurrentButton = document.getElementById('add-current-btn') as HTMLButtonElement;
+
+    // Modal elements
+    this.modalOverlay = document.getElementById('modal-overlay') as HTMLElement;
+    this.modalTitle = document.getElementById('modal-title') as HTMLElement;
+    this.modalMessage = document.getElementById('modal-message') as HTMLElement;
+    this.modalConfirm = document.getElementById('modal-confirm') as HTMLButtonElement;
+    this.modalCancel = document.getElementById('modal-cancel') as HTMLButtonElement;
+    this.modalClose = document.getElementById('modal-close') as HTMLButtonElement;
 
     this.initializeEventListeners();
     this.loadChannels();
+    this.detectCurrentChannel();
   }
 
   /**
@@ -54,6 +81,34 @@ class PopupManager {
         this.handleAddChannel();
       }
     });
+    
+    // Bouton d'ajout rapide
+    this.addCurrentButton.addEventListener('click', () => {
+      this.handleAddCurrentChannel();
+    });
+    
+    // Modal events
+    this.modalCancel.addEventListener('click', () => {
+      this.hideModal();
+    });
+    
+    this.modalClose.addEventListener('click', () => {
+      this.hideModal();
+    });
+    
+    this.modalConfirm.addEventListener('click', () => {
+      if (this.modalConfirmCallback) {
+        this.modalConfirmCallback();
+      }
+      this.hideModal();
+    });
+    
+    // Fermer la modal en cliquant sur l'overlay
+    this.modalOverlay.addEventListener('click', (e) => {
+      if (e.target === this.modalOverlay) {
+        this.hideModal();
+      }
+    });
   }
 
   /**
@@ -68,6 +123,8 @@ class PopupManager {
       if (response.success && response.data) {
         this.channels = response.data as IChannelData[];
         this.renderChannels();
+        // Re-détecte la chaîne courante après le chargement pour mettre à jour l'état
+        this.detectCurrentChannel();
       } else {
         this.showMessage('Erreur lors du chargement des chaînes', 'error');
       }
@@ -121,29 +178,39 @@ class PopupManager {
    * Parse l'entrée utilisateur pour extraire les données de chaîne
    */
   private parseChannelInput(input: string): IChannelInput {
-    // Expression régulière pour extraire l'ID de chaîne YouTube
-    const channelIdMatch = input.match(/(?:channel\/|@)([a-zA-Z0-9_-]+)/);
-    const ucIdMatch = input.match(/(UC[a-zA-Z0-9_-]{22})/);
-    
     let channelId: string;
     let url: string;
+    
+    // Expression régulière pour extraire l'ID de chaîne YouTube
+    const ucIdMatch = input.match(/(UC[a-zA-Z0-9_-]{22})/);
+    const channelUrlMatch = input.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
+    const handleMatch = input.match(/youtube\.com\/@([a-zA-Z0-9_-]+)/);
+    const simpleHandleMatch = input.match(/^@([a-zA-Z0-9_-]+)$/);
     
     if (ucIdMatch?.[1]) {
       // ID direct UC...
       channelId = ucIdMatch[1];
       url = `https://www.youtube.com/channel/${channelId}`;
-    } else if (channelIdMatch?.[1]) {
-      // URL avec nom de chaîne ou @handle
-      channelId = channelIdMatch[1];
-      url = input.startsWith('http') ? input : `https://www.youtube.com/channel/${channelId}`;
+    } else if (channelUrlMatch?.[1]) {
+      // URL avec /channel/...
+      channelId = channelUrlMatch[1];
+      url = `https://www.youtube.com/channel/${channelId}`;
+    } else if (handleMatch?.[1]) {
+      // URL avec /@handle
+      channelId = `@${handleMatch[1]}`;
+      url = `https://www.youtube.com/@${handleMatch[1]}`;
+    } else if (simpleHandleMatch?.[1]) {
+      // Handle @username simple
+      channelId = input;
+      url = `https://www.youtube.com/${input}`;
     } else if (input.startsWith('@')) {
-      // Handle @username
+      // Handle @username quelconque
       channelId = input;
       url = `https://www.youtube.com/${input}`;
     } else {
-      // Suppose que c'est un ID direct
+      // Suppose que c'est un ID direct ou nom de chaîne
       channelId = input;
-      url = `https://www.youtube.com/channel/${channelId}`;
+      url = input.includes('youtube.com') ? input : `https://www.youtube.com/channel/${channelId}`;
     }
 
     return {
@@ -152,6 +219,135 @@ class PopupManager {
       url: url,
       source: 'manual'
     };
+  }
+
+  /**
+   * Détecte la chaîne courante sur la page YouTube active
+   */
+  private async detectCurrentChannel(): Promise<void> {
+    try {
+      // Récupère l'onglet actif
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      if (!tab?.id || !tab.url?.includes('youtube.com')) {
+        this.hideQuickAdd();
+        return;
+      }
+
+      // Demande au content script d'analyser la page
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        type: 'GET_CURRENT_CHANNEL'
+      });
+
+      if (response?.success && response.channelData) {
+        this.currentChannelData = response.channelData;
+        
+        // Vérifier si la chaîne est déjà dans la liste
+        const isAlreadyBlocked = this.channels.some(channel => 
+          channel.id === response.channelData.id
+        );
+        
+        if (isAlreadyBlocked) {
+          this.showQuickAddAsAlreadyAdded(response.channelData.name || response.channelData.id);
+        } else {
+          this.currentChannelName.textContent = response.channelData.name || response.channelData.id;
+          this.showQuickAdd();
+        }
+      } else {
+        this.hideQuickAdd();
+      }
+    } catch (error) {
+      console.error('[Popup] Erreur détection chaîne courante:', error);
+      this.hideQuickAdd();
+    }
+  }
+
+  /**
+   * Gère l'ajout de la chaîne courante
+   */
+  private async handleAddCurrentChannel(): Promise<void> {
+    if (!this.currentChannelData) {
+      this.showMessage('Aucune chaîne détectée sur cette page', 'warning');
+      return;
+    }
+
+    try {
+      this.setCurrentButtonLoading(true);
+      
+      const response = await this.sendMessage({
+        type: MESSAGES.ADD_CHANNEL,
+        data: this.currentChannelData
+      });
+
+      if (response.success && response.data) {
+        const result = response.data as { channel: IChannelData; totalChannels: number };
+        this.channels.push(result.channel);
+        this.renderChannels();
+        this.showMessage(`Chaîne "${result.channel.name}" ajoutée avec succès`, 'success');
+        // Affiche "déjà dans la liste" au lieu de masquer complètement
+        this.showQuickAddAsAlreadyAdded(result.channel.name);
+      } else {
+        this.showMessage(response.error || 'Erreur lors de l\'ajout', 'error');
+      }
+    } catch (error) {
+      console.error('[Popup] Erreur ajout chaîne courante:', error);
+      this.showMessage('Erreur lors de l\'ajout de la chaîne', 'error');
+    } finally {
+      this.setCurrentButtonLoading(false);
+    }
+  }
+
+  /**
+   * Affiche la section d'ajout rapide
+   */
+  private showQuickAdd(): void {
+    // Réafficher le bouton d'ajout et nettoyer le message "déjà ajoutée"
+    this.addCurrentButton.style.display = 'flex';
+    
+    const alreadyAddedMessage = this.quickAddSection.querySelector('.already-added-message');
+    if (alreadyAddedMessage) {
+      alreadyAddedMessage.remove();
+    }
+    
+    this.quickAddSection.style.display = 'block';
+  }
+
+  /**
+   * Masque la section d'ajout rapide
+   */
+  private hideQuickAdd(): void {
+    this.quickAddSection.style.display = 'none';
+  }
+
+  /**
+   * Affiche la section d'ajout rapide avec le message "déjà ajoutée"
+   */
+  private showQuickAddAsAlreadyAdded(channelName: string): void {
+    this.currentChannelName.textContent = channelName;
+    this.addCurrentButton.style.display = 'none';
+    
+    // Créer ou mettre à jour le message "déjà ajoutée"
+    let alreadyAddedMessage = this.quickAddSection.querySelector('.already-added-message') as HTMLElement;
+    if (!alreadyAddedMessage) {
+      alreadyAddedMessage = document.createElement('div');
+      alreadyAddedMessage.className = 'already-added-message';
+      alreadyAddedMessage.innerHTML = '<span style="color: #28a745; font-weight: 500;">✓ Déjà dans la liste</span>';
+      this.quickAddSection.querySelector('.quick-add-content')?.appendChild(alreadyAddedMessage);
+    }
+    
+    this.quickAddSection.style.display = 'block';
+  }
+
+  /**
+   * Gère l'état de chargement du bouton d'ajout rapide
+   */
+  private setCurrentButtonLoading(loading: boolean): void {
+    const btnText = this.addCurrentButton.querySelector('.btn-text') as HTMLElement;
+    const btnLoading = this.addCurrentButton.querySelector('.btn-loading') as HTMLElement;
+    
+    this.addCurrentButton.disabled = loading;
+    btnText.style.display = loading ? 'none' : 'inline';
+    btnLoading.style.display = loading ? 'inline' : 'none';
   }
 
   /**
@@ -169,6 +365,9 @@ class PopupManager {
         this.channels = this.channels.filter(ch => ch.id !== channelId);
         this.renderChannels();
         this.showMessage(`Chaîne "${result.removedChannel.name}" supprimée`, 'success');
+        
+        // Re-détecte la chaîne courante pour mettre à jour le Quick Add
+        this.detectCurrentChannel();
       } else {
         this.showMessage(response.error || 'Erreur lors de la suppression', 'error');
       }
@@ -182,8 +381,6 @@ class PopupManager {
    * Affiche la liste des chaînes
    */
   private renderChannels(): void {
-    this.updateChannelCount();
-    
     if (this.channels.length === 0) {
       this.showEmptyState(true);
       return;
@@ -214,24 +411,24 @@ class PopupManager {
           <div class="channel-name">${this.escapeHtml(channel.name)}</div>
           <div class="channel-meta">
             <span class="channel-id">${this.escapeHtml(channel.id)}</span>
-            <span class="channel-date">Ajoutée ${this.formatDate(channel.addedDate)}</span>
           </div>
         </div>
       </div>
       <div class="channel-actions">
-        <button class="toggle-button" data-enabled="${channel.isEnabled}">
-          ${channel.isEnabled ? 'Actif' : 'Inactif'}
-        </button>
-        <button class="remove-button" title="Supprimer">×</button>
+        <button class="remove-button" title="Supprimer la chaîne">✕</button>
       </div>
     `;
 
     // Événements
     const removeButton = div.querySelector('.remove-button') as HTMLButtonElement;
     removeButton.addEventListener('click', () => {
-      if (confirm(`Supprimer la chaîne "${channel.name}" ?`)) {
-        this.removeChannel(channel.id);
-      }
+      this.showConfirmModal(
+        'Supprimer la chaîne',
+        `Êtes-vous sûr de vouloir supprimer "${channel.name}" de la liste des chaînes bloquées ?`,
+        () => {
+          this.removeChannel(channel.id);
+        }
+      );
     });
 
     return div;
@@ -240,10 +437,6 @@ class PopupManager {
   /**
    * Met à jour le compteur de chaînes
    */
-  private updateChannelCount(): void {
-    this.channelCount.textContent = this.channels.length.toString();
-  }
-
   /**
    * Affiche/cache l'état vide
    */
@@ -302,6 +495,24 @@ class PopupManager {
   }
 
   /**
+   * Affiche la modal de confirmation
+   */
+  private showConfirmModal(title: string, message: string, callback: () => void): void {
+    this.modalTitle.textContent = title;
+    this.modalMessage.textContent = message;
+    this.modalConfirmCallback = callback;
+    this.modalOverlay.style.display = 'flex';
+  }
+
+  /**
+   * Masque la modal de confirmation
+   */
+  private hideModal(): void {
+    this.modalOverlay.style.display = 'none';
+    this.modalConfirmCallback = null;
+  }
+
+  /**
    * Échappe le HTML pour éviter les injections
    */
   private escapeHtml(text: string): string {
@@ -310,17 +521,6 @@ class PopupManager {
     return div.innerHTML;
   }
 
-  /**
-   * Formate une date en français
-   */
-  private formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-    });
-  }
 }
 
 // Initialisation du popup quand le DOM est prêt

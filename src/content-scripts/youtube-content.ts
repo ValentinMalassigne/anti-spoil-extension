@@ -3,12 +3,74 @@
  * Injecté sur YouTube pour détecter et flouter les chaînes bloquées
  */
 
-import { MESSAGES, YOUTUBE_SELECTORS } from '../utils/constants.js';
-import type { 
-  IChannelData, 
-  IVideoInfo, 
-  TChannelId 
-} from '../types/index.js';
+// Types locaux pour le content script (évite les imports ES6)
+type TChannelId = string;
+
+interface IVideoInfo {
+  videoUrl: string;
+  videoId: string;
+  title: string;
+  channelId: TChannelId;
+  channelName: string;
+  element: HTMLElement;
+  pageType: 'home' | 'search' | 'channel' | 'watch';
+}
+
+interface IChannelData {
+  id: TChannelId;
+  name: string;
+  url: string;
+  avatarUrl?: string;
+  addedDate: string;
+  lastModified: string;
+  isEnabled: boolean;
+  source: 'manual' | 'import' | 'detected';
+  detectionCount: number;
+  lastSeen?: string;
+}
+
+// Constantes nécessaires (copiées depuis constants.ts)
+const MESSAGES = {
+  GET_CHANNELS: 'GET_CHANNELS',
+  UPDATE_BLOCKED_CHANNELS: 'UPDATE_BLOCKED_CHANNELS',
+  CHANNEL_DETECTED: 'CHANNEL_DETECTED'
+} as const;
+
+const YOUTUBE_SELECTORS = {
+  VIDEO_CONTAINERS: [
+    'ytd-rich-item-renderer',
+    'ytd-video-renderer',
+    'ytd-playlist-video-renderer',
+    'ytd-grid-video-renderer',
+    'ytd-compact-video-renderer',
+    'ytd-movie-renderer',
+    'ytd-radio-renderer'
+  ].join(','),
+  
+  THUMBNAILS: [
+    'ytd-thumbnail img',
+    'ytd-playlist-thumbnail img',
+    '.ytd-thumbnail img',
+    'img.yt-core-image'
+  ].join(','),
+  
+  TITLES: [
+    '#video-title',
+    '.ytd-video-meta-block h3',
+    'ytd-rich-grid-media h3',
+    '.ytd-playlist-video-renderer h3',
+    '#video-title-link',
+    'a#video-title'
+  ].join(','),
+  
+  CHANNEL_LINKS: [
+    'ytd-channel-name a',
+    '.ytd-video-owner-renderer a',
+    '.ytd-playlist-byline-renderer a',
+    'ytd-channel-renderer a',
+    '.yt-simple-endpoint.ytd-channel-name'
+  ].join(',')
+} as const;
 
 /**
  * Gestionnaire principal du content script YouTube
@@ -397,8 +459,71 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if ((window as any).antiSpoilContentScript) {
       ((window as any).antiSpoilContentScript as YouTubeContentScript).reloadChannels();
     }
+    return false; // Pas de réponse asynchrone
+  } else if (message.type === 'GET_CURRENT_CHANNEL') {
+    // Détecte la chaîne de la page courante
+    const channelData = getCurrentChannelInfo();
+    sendResponse({ 
+      success: !!channelData, 
+      channelData: channelData 
+    });
+    return true; // Réponse asynchrone
   }
+  return false;
 });
+
+/**
+ * Extrait les informations de la chaîne courante depuis la page YouTube
+ */
+function getCurrentChannelInfo(): { id: string; name: string; url: string } | null {
+  const currentUrl = window.location.href;
+  
+  try {
+    // Page de chaîne (/channel/... ou /@...)
+    if (currentUrl.includes('/channel/') || currentUrl.includes('/@')) {
+      const channelNameElement = document.querySelector('ytd-channel-name #text') as HTMLElement;
+      const channelName = channelNameElement?.textContent?.trim() || '';
+      
+      // Extraction de l'ID/handle depuis l'URL
+      const channelMatch = currentUrl.match(/\/channel\/([^\/\?]+)|\/(@[^\/\?]+)/);
+      const channelId = channelMatch?.[1] || channelMatch?.[2] || '';
+      
+      if (channelId) {
+        return {
+          id: channelId,
+          name: channelName || channelId,
+          url: (currentUrl.split('?')[0]) || currentUrl
+        };
+      }
+    }
+    
+    // Page de vidéo (/watch?v=...)
+    if (currentUrl.includes('/watch')) {
+      const channelLinkElement = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], ytd-video-owner-renderer a[href*="/@"]') as HTMLAnchorElement;
+      const channelNameElement = document.querySelector('ytd-video-owner-renderer #text') as HTMLElement;
+      
+      if (channelLinkElement && channelNameElement) {
+        const channelHref = channelLinkElement.href;
+        const channelMatch = channelHref.match(/\/channel\/([^\/\?]+)|\/(@[^\/\?]+)/);
+        const channelId = channelMatch?.[1] || channelMatch?.[2] || '';
+        const channelName = channelNameElement.textContent?.trim() || '';
+        
+        if (channelId) {
+          return {
+            id: channelId,
+            name: channelName || channelId,
+            url: (channelHref.split('?')[0]) || channelHref
+          };
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('[Content Script] Erreur détection chaîne:', error);
+    return null;
+  }
+}
 
 // Initialisation
 if (document.readyState === 'loading') {

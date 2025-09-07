@@ -41,10 +41,10 @@ export class ChannelManager {
   public async addChannel(channelData: IChannelInput): Promise<IMessageResponse<{ channel: IChannelData; totalChannels: number }>> {
     try {
       // Validation des données d'entrée
-      if (!channelData.id || !channelData.name) {
+      if (!channelData.id) {
         return {
           success: false,
-          error: 'ID et nom de la chaîne requis',
+          error: 'ID de chaîne requis',
           errorCode: 'INVALID_DATA'
         };
       }

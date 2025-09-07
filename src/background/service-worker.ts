@@ -136,10 +136,10 @@ class AntiSpoilServiceWorker {
    * Gère l'ajout d'une nouvelle chaîne
    */
   private async handleAddChannel(channelData: IChannelInput): Promise<IMessageResponse> {
-    if (!channelData?.id || !channelData?.name) {
+    if (!channelData?.id) {
       return { 
         success: false, 
-        error: 'Données de chaîne incomplètes',
+        error: 'ID de chaîne requis',
         errorCode: 'INVALID_DATA'
       };
     }
